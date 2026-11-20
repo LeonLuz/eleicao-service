@@ -1,12 +1,9 @@
 package com.example.eleicao_service.feature.usuario.model.dto;
-
+import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
-
-import com.example.eleicao_service.feature.usuario.model.Role;
+import com.example.eleicao_service.feature.chefe_secao.model.dto.ChefeSecaoInputDTO;
+import com.example.eleicao_service.feature.eleitor.model.dto.EleitorInputDTO;
 import jakarta.validation.constraints.Size;
-
-import java.util.ArrayList;
-import java.util.List;
 
 public record UsuarioInputDTO(
         @NotBlank(message = "Nome de usuário é obrigatório")
@@ -16,5 +13,9 @@ public record UsuarioInputDTO(
         @Size(min = 5, message = "A senha deve ter no mínimo 5 dígitos")
         String password,
 
-        List<Role> roles
+        @Valid
+        ChefeSecaoInputDTO chefeSecao,
+
+        @Valid
+        EleitorInputDTO eleitor
 ) {}

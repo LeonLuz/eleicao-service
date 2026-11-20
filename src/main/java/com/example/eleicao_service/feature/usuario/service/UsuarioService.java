@@ -7,9 +7,13 @@ public interface UsuarioService {
 
     UsuarioDTO findById(Integer id);
 
-    UsuarioDTO insert(UsuarioInputDTO usuarioInputDTO);
+    UsuarioDTO insert(UsuarioInputDTO inputDTO);
 
-    UsuarioDTO update(UsuarioInputDTO usuarioInputDTO, Integer id);
+    UsuarioDTO update(UsuarioInputDTO inputDTO, Integer id);
 
     UsuarioDTO delete(Integer id);
+
+    UsuarioDTO removerPerfilChefeSecao(Integer id);
+
+    UsuarioDTO removerPerfilEleitor(Integer id);
 }

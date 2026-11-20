@@ -17,28 +17,39 @@ public class UsuarioControllerImpl implements UsuarioController {
 
     private final UsuarioService usuarioService;
 
+    @Override
     @GetMapping("/{id}")
-    public ResponseEntity<UsuarioDTO> findById(@PathVariable("id") Integer id){
-        UsuarioDTO usuarioDTO = usuarioService.findById(id);
-        return ResponseEntity.status(HttpStatus.OK).body(usuarioDTO);
+    public ResponseEntity<UsuarioDTO> findById(@PathVariable("id") Integer id) {
+        return ResponseEntity.ok(usuarioService.findById(id));
     }
 
+    @Override
     @PostMapping
-    public ResponseEntity<UsuarioDTO> insert(@RequestBody @Valid UsuarioInputDTO usuarioInputDTO){
-        UsuarioDTO usuarioDTO = usuarioService.insert(usuarioInputDTO);
-        return ResponseEntity.status(HttpStatus.CREATED).body(usuarioDTO);
+    public ResponseEntity<UsuarioDTO> insert(@RequestBody @Valid UsuarioInputDTO inputDTO) {
+        return ResponseEntity.status(HttpStatus.CREATED).body(usuarioService.insert(inputDTO));
     }
 
+    @Override
     @PutMapping("/{id}")
-    public ResponseEntity<UsuarioDTO> update(@RequestBody @Valid UsuarioInputDTO usuarioInputDTO,
-                                             @PathVariable("id") Integer id){
-        UsuarioDTO usuarioDTO = usuarioService.update(usuarioInputDTO, id);
-        return ResponseEntity.status(HttpStatus.OK).body(usuarioDTO);
+    public ResponseEntity<UsuarioDTO> update(@RequestBody @Valid UsuarioInputDTO inputDTO, @PathVariable("id") Integer id) {
+        return ResponseEntity.ok(usuarioService.update(inputDTO, id));
     }
 
+    @Override
     @DeleteMapping("/{id}")
-    public ResponseEntity<UsuarioDTO> delete(@PathVariable("id") Integer id){
-        UsuarioDTO usuarioDTO = usuarioService.delete(id);
-        return ResponseEntity.status(HttpStatus.OK).body(usuarioDTO);
+    public ResponseEntity<UsuarioDTO> delete(@PathVariable("id") Integer id) {
+        return ResponseEntity.ok(usuarioService.delete(id));
+    }
+
+    @Override
+    @DeleteMapping("/{id}/chefe-secao")
+    public ResponseEntity<UsuarioDTO> removerChefe(@PathVariable("id") Integer id) {
+        return ResponseEntity.ok(usuarioService.removerPerfilChefeSecao(id));
+    }
+
+    @Override
+    @DeleteMapping("/{id}/eleitor")
+    public ResponseEntity<UsuarioDTO> removerEleitor(@PathVariable("id") Integer id) {
+        return ResponseEntity.ok(usuarioService.removerPerfilEleitor(id));
     }
 }
