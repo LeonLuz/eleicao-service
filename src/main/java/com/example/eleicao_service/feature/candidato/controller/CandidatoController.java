@@ -35,10 +35,10 @@ public interface CandidatoController {
             @PathVariable("id") Integer id
     );
 
-    @Operation(summary = "Cadastra um novo candidato")
+    @Operation(summary = "Cadastra um novo candidato", description = "Atribui o perfil de candidato a um usuário existente que não seja chefe de seção")
     @ApiResponses({
             @ApiResponse(responseCode = "201", description = "Candidato cadastrado com sucesso"),
-            @ApiResponse(responseCode = "400", description = "Dados inválidos ou regra de negócio violada"),
+            @ApiResponse(responseCode = "400", description = "Dados inválidos ou regra de negócio violada (ex: usuário já é candidato ou chefe de seção, ou número eleitoral inválido)"),
             @ApiResponse(responseCode = "404", description = "Partido, cargo ou usuário não encontrado")
     })
     @PostMapping

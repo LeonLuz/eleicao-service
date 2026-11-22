@@ -26,6 +26,10 @@ import java.util.Objects;
 @RequiredArgsConstructor
 public class CandidatoServiceImpl implements CandidatoService {
 
+    private static final String ROLE_USER = "USER";
+    private static final String ROLE_CANDIDATO = "CANDIDATO";
+    private static final String ROLE_CHEFE_SECAO = "CHEFE_SECAO";
+
     private final CandidatoRepository candidatoRepository;
     private final UsuarioRepository usuarioRepository;
     private final CargoRepository cargoRepository;
@@ -51,8 +55,11 @@ public class CandidatoServiceImpl implements CandidatoService {
     @Transactional
     public CandidatoDTO insert(CandidatoInputDTO input) {
         UsuarioModel usuario = usuarioRepository.findById(input.idUsuario())
-                .orElseThrow(() -> new EntidadeNaoEncontradaException("Usuário não encontrado: " + input.idUsuario()));
+                .orElseThrow(() -> new EntidadeNaoEncontradaException("Usuário não encontrado"));
 
+        if (usuario.getRoles() != null && usuario.getRoles().contains(ROLE_CHEFE_SECAO)) {
+            throw new RegraNegocioException("Usuário já é chefe de seção e não pode ser cadastrado como candidato");
+        }
         if (candidatoRepository.existsById(usuario.getId())) {
             throw new RegraNegocioException("Usuário já está cadastrado como candidato");
         }
@@ -68,9 +75,9 @@ public class CandidatoServiceImpl implements CandidatoService {
         candidato.setPartido(partido);
 
         if (usuario.getRoles() == null) {
-            usuario.setRoles(new ArrayList<>(List.of("USER", "CANDIDATO")));
-        } else if (!usuario.getRoles().contains("CANDIDATO")) {
-            usuario.getRoles().add("CANDIDATO");
+            usuario.setRoles(new ArrayList<>(List.of(ROLE_USER, ROLE_CANDIDATO)));
+        } else if (!usuario.getRoles().contains(ROLE_CANDIDATO)) {
+            usuario.getRoles().add(ROLE_CANDIDATO);
         }
 
         candidato = candidatoRepository.save(candidato);
@@ -110,7 +117,7 @@ public class CandidatoServiceImpl implements CandidatoService {
         if (usuario != null) {
             usuario.setCandidato(null);
             if (usuario.getRoles() != null) {
-                usuario.getRoles().remove("CANDIDATO");
+                usuario.getRoles().remove(ROLE_CANDIDATO);
             }
         }
 
@@ -137,16 +144,16 @@ public class CandidatoServiceImpl implements CandidatoService {
 
     private CandidatoModel findOrFail(Integer id) {
         return candidatoRepository.findById(id)
-                .orElseThrow(() -> new EntidadeNaoEncontradaException("Candidato não encontrado: " + id));
+                .orElseThrow(() -> new EntidadeNaoEncontradaException("Candidato não encontrado"));
     }
 
     private CargoModel findCargoOrFail(Integer cargoId) {
         return cargoRepository.findById(cargoId)
-                .orElseThrow(() -> new EntidadeNaoEncontradaException("Cargo não encontrado: " + cargoId));
+                .orElseThrow(() -> new EntidadeNaoEncontradaException("Cargo não encontrado"));
     }
 
     private PartidoModel findPartidoOrFail(Integer partidoId) {
         return partidoRepository.findById(partidoId)
-                .orElseThrow(() -> new EntidadeNaoEncontradaException("Partido não encontrado: " + partidoId));
+                .orElseThrow(() -> new EntidadeNaoEncontradaException("Partido não encontrado"));
     }
 }
