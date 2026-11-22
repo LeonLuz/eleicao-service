@@ -1,6 +1,5 @@
 package com.example.eleicao_service.feature.candidato.service;
 
-import com.example.eleicao_service.feature.candidato.model.Cargo;
 import com.example.eleicao_service.feature.candidato.model.dto.CandidatoDTO;
 import com.example.eleicao_service.feature.candidato.model.dto.CandidatoInputDTO;
 
@@ -8,7 +7,7 @@ import java.util.List;
 
 public interface CandidatoService {
 
-    List<CandidatoDTO> findAll(Cargo cargo);
+    List<CandidatoDTO> findAll(Integer cargoId);
 
     CandidatoDTO findById(Integer id);
 

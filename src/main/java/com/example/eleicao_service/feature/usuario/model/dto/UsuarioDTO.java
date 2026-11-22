@@ -1,5 +1,7 @@
 package com.example.eleicao_service.feature.usuario.model.dto;
 import java.util.List;
+
+import com.example.eleicao_service.feature.candidato.model.dto.CandidatoDTO;
 import com.example.eleicao_service.feature.chefe_secao.model.dto.ChefeSecaoDTO;
 import com.example.eleicao_service.feature.eleitor.model.dto.EleitorDTO;
 public record UsuarioDTO(
@@ -7,6 +9,8 @@ public record UsuarioDTO(
         String username,
         List<String> roles,
         Boolean ativo,
+
         ChefeSecaoDTO chefeSecao,
-        EleitorDTO eleitor
+        EleitorDTO eleitor,
+        CandidatoDTO candidato
 ) {}

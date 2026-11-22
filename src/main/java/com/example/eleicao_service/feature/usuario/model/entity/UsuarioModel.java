@@ -1,5 +1,6 @@
 package com.example.eleicao_service.feature.usuario.model.entity;
 
+import com.example.eleicao_service.feature.candidato.model.entity.CandidatoModel;
 import com.example.eleicao_service.feature.chefe_secao.model.entity.ChefeSecaoModel;
 import com.example.eleicao_service.feature.eleitor.model.entity.EleitorModel;
 import jakarta.persistence.*;
@@ -41,6 +42,10 @@ public class UsuarioModel {
     @PrimaryKeyJoinColumn
     private EleitorModel eleitor;
 
+    @OneToOne(mappedBy = "usuario", cascade = CascadeType.ALL, orphanRemoval = true)
+    @PrimaryKeyJoinColumn
+    private CandidatoModel candidato;
+
     public void setChefeSecao(ChefeSecaoModel chefeSecao) {
         this.chefeSecao = chefeSecao;
         if (chefeSecao != null) chefeSecao.setUsuario(this);
@@ -49,5 +54,10 @@ public class UsuarioModel {
     public void setEleitor(EleitorModel eleitor) {
         this.eleitor = eleitor;
         if (eleitor != null) eleitor.setUsuario(this);
+    }
+
+    public void setCandidato(CandidatoModel candidato){
+        this.candidato  = candidato;
+        if (candidato != null) candidato.setUsuario(this);
     }
 }

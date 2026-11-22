@@ -1,26 +1,26 @@
 package com.example.eleicao_service.feature.candidato.model.dto;
 
-import com.example.eleicao_service.feature.candidato.model.Cargo;
+import jakarta.validation.constraints.Max;
+import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
-import jakarta.validation.constraints.Positive;
 
 public record CandidatoInputDTO(
 
-        /** Usuário (com role CANDIDATO) ao qual o candidato será vinculado. Usado apenas no cadastro. */
         @NotNull(message = "Id do usuário é obrigatório")
         Integer idUsuario,
 
         @NotBlank(message = "Nome é obrigatório")
         String nome,
 
-        @NotNull(message = "Número é obrigatório")
-        @Positive(message = "Número deve ser positivo")
-        Integer numero,
+        @NotNull(message = "Id do cargo é obrigatório")
+        Integer idCargo,
 
-        @NotBlank(message = "Partido é obrigatório")
-        String partido,
+        @NotNull(message = "Id do partido é obrigatório")
+        Integer idPartido,
 
-        @NotNull(message = "Cargo é obrigatório")
-        Cargo cargo
-){}
+        @NotNull(message = "Número eleitoral (sufixo) é obrigatório. Use 0 para cargos sem sufixo.")
+        @Min(value = 0, message = "Sufixo eleitoral não pode ser negativo")
+        @Max(value = 999, message = "Sufixo eleitoral deve ser no máximo 999")
+        Integer idEleitoral
+) {}

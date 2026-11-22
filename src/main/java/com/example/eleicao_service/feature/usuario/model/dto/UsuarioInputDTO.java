@@ -1,4 +1,5 @@
 package com.example.eleicao_service.feature.usuario.model.dto;
+import com.example.eleicao_service.feature.candidato.model.dto.CandidatoInputDTO;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
 import com.example.eleicao_service.feature.chefe_secao.model.dto.ChefeSecaoInputDTO;
@@ -17,5 +18,8 @@ public record UsuarioInputDTO(
         ChefeSecaoInputDTO chefeSecao,
 
         @Valid
-        EleitorInputDTO eleitor
+        EleitorInputDTO eleitor,
+
+        @Valid
+        CandidatoInputDTO candidato
 ) {}

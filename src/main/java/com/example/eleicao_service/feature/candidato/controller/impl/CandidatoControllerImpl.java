@@ -1,7 +1,6 @@
 package com.example.eleicao_service.feature.candidato.controller.impl;
 
 import com.example.eleicao_service.feature.candidato.controller.CandidatoController;
-import com.example.eleicao_service.feature.candidato.model.Cargo;
 import com.example.eleicao_service.feature.candidato.model.dto.CandidatoDTO;
 import com.example.eleicao_service.feature.candidato.model.dto.CandidatoInputDTO;
 import com.example.eleicao_service.feature.candidato.service.CandidatoService;
@@ -21,8 +20,8 @@ public class CandidatoControllerImpl implements CandidatoController {
     private final CandidatoService candidatoService;
 
     @Override
-    public ResponseEntity<List<CandidatoDTO>> findAll(Cargo cargo) {
-        return ResponseEntity.ok(candidatoService.findAll(cargo));
+    public ResponseEntity<List<CandidatoDTO>> findAll(Integer cargoId) {
+        return ResponseEntity.ok(candidatoService.findAll(cargoId));
     }
 
     @Override

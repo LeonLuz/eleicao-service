@@ -12,15 +12,20 @@ import org.mapstruct.MappingTarget;
 public interface CandidatoMapper extends BaseMapper<CandidatoInputDTO, CandidatoModel, CandidatoDTO> {
 
     @Override
+    @Mapping(target = "numeroCompleto", expression = "java(entity.getNumeroCompleto())")
     CandidatoDTO toDTO(CandidatoModel entity);
 
     @Override
     @Mapping(target = "id", ignore = true)
     @Mapping(target = "usuario", ignore = true)
+    @Mapping(target = "cargo", ignore = true)
+    @Mapping(target = "partido", ignore = true)
     CandidatoModel toEntity(CandidatoInputDTO input);
 
     @Override
     @Mapping(target = "id", ignore = true)
     @Mapping(target = "usuario", ignore = true)
+    @Mapping(target = "cargo", ignore = true)
+    @Mapping(target = "partido", ignore = true)
     void copyToEntity(CandidatoInputDTO input, @MappingTarget CandidatoModel entity);
 }
