@@ -1,19 +1,15 @@
 package com.example.eleicao_service.feature.candidato.service;
 
-import com.example.eleicao_service.feature.candidato.model.dto.CandidatoDTO;
-import com.example.eleicao_service.feature.candidato.model.dto.CandidatoInputDTO;
+import com.example.eleicao_service.feature.candidato.model.dto.CandidatoRequest;
+import com.example.eleicao_service.feature.candidato.model.dto.CandidatoResponse;
 
 import java.util.List;
 
 public interface CandidatoService {
-
-    List<CandidatoDTO> findAll(Integer cargoId);
-
-    CandidatoDTO findById(Integer id);
-
-    CandidatoDTO insert(CandidatoInputDTO candidatoInputDTO);
-
-    CandidatoDTO update(CandidatoInputDTO candidatoInputDTO, Integer id);
-
-    CandidatoDTO delete(Integer id);
+    CandidatoResponse cadastrar(CandidatoRequest request);
+    CandidatoResponse atualizar(Long id, CandidatoRequest request);
+    CandidatoResponse consultarPorId(Long id);
+    List<CandidatoResponse> listarPorEleicaoECargo(Long idEleicao, Long idCargo);
+    List<CandidatoResponse> listarTodos();
+    void excluir(Long id);
 }

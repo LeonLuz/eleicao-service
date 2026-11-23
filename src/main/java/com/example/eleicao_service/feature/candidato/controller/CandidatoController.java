@@ -1,70 +1,45 @@
 package com.example.eleicao_service.feature.candidato.controller;
 
-import com.example.eleicao_service.feature.candidato.model.dto.CandidatoDTO;
-import com.example.eleicao_service.feature.candidato.model.dto.CandidatoInputDTO;
+
+import com.example.eleicao_service.feature.candidato.model.dto.CandidatoRequest;
+import com.example.eleicao_service.feature.candidato.model.dto.CandidatoResponse;
 import io.swagger.v3.oas.annotations.Operation;
-import io.swagger.v3.oas.annotations.Parameter;
-import io.swagger.v3.oas.annotations.responses.ApiResponse;
-import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
-@Tag(name = "Candidatos", description = "Gerenciamento de candidatos das eleições")
+@Tag(name = "Candidatos", description = "Gerenciamento e consulta de candidatos")
+@RequestMapping("/api/candidatos")
 public interface CandidatoController {
 
-    @Operation(summary = "Lista todos os candidatos", description = "Retorna todos os candidatos cadastrados, com opção de filtro por cargo")
-    @ApiResponse(responseCode = "200", description = "Lista retornada com sucesso")
-    @GetMapping
-    ResponseEntity<List<CandidatoDTO>> findAll(
-            @Parameter(description = "ID do cargo para filtrar os candidatos")
-            @RequestParam(name = "cargoId", required = false) Integer cargoId
-    );
-
-    @Operation(summary = "Busca um candidato por ID")
-    @ApiResponses({
-            @ApiResponse(responseCode = "200", description = "Candidato encontrado"),
-            @ApiResponse(responseCode = "404", description = "Candidato não encontrado")
-    })
-    @GetMapping("/{id}")
-    ResponseEntity<CandidatoDTO> findById(
-            @Parameter(description = "ID do candidato", required = true)
-            @PathVariable("id") Integer id
-    );
-
-    @Operation(summary = "Cadastra um novo candidato", description = "Atribui o perfil de candidato a um usuário existente que não seja chefe de seção")
-    @ApiResponses({
-            @ApiResponse(responseCode = "201", description = "Candidato cadastrado com sucesso"),
-            @ApiResponse(responseCode = "400", description = "Dados inválidos ou regra de negócio violada (ex: usuário já é candidato ou chefe de seção, ou número eleitoral inválido)"),
-            @ApiResponse(responseCode = "404", description = "Partido, cargo ou usuário não encontrado")
-    })
+    @Operation(summary = "Cadastrar candidato", description = "Restrito ao Chefe da Seção.")
+    @PreAuthorize("hasRole('CHEFE_SECAO')")
     @PostMapping
-    ResponseEntity<CandidatoDTO> insert(@RequestBody @Valid CandidatoInputDTO candidatoInputDTO);
+    ResponseEntity<CandidatoResponse> cadastrar(@Valid @RequestBody CandidatoRequest request);
 
-    @Operation(summary = "Atualiza os dados de um candidato")
-    @ApiResponses({
-            @ApiResponse(responseCode = "200", description = "Candidato atualizado com sucesso"),
-            @ApiResponse(responseCode = "400", description = "Dados inválidos ou regra de negócio violada"),
-            @ApiResponse(responseCode = "404", description = "Candidato, partido ou cargo não encontrado")
-    })
+    @Operation(summary = "Alterar dados do candidato", description = "Permite ao Chefe da Seção alterar todos os dados, incluindo Nome e CPF.")
+    @PreAuthorize("hasRole('CHEFE_SECAO')")
     @PutMapping("/{id}")
-    ResponseEntity<CandidatoDTO> update(
-            @RequestBody @Valid CandidatoInputDTO candidatoInputDTO,
-            @Parameter(description = "ID do candidato", required = true)
-            @PathVariable("id") Integer id
-    );
+    ResponseEntity<CandidatoResponse> atualizar(@PathVariable Long id, @Valid @RequestBody CandidatoRequest request);
 
-    @Operation(summary = "Remove um candidato")
-    @ApiResponses({
-            @ApiResponse(responseCode = "200", description = "Candidato removido com sucesso"),
-            @ApiResponse(responseCode = "404", description = "Candidato não encontrado")
-    })
+    @Operation(summary = "Consultar candidato por ID")
+    @GetMapping("/{id}")
+    ResponseEntity<CandidatoResponse> consultarPorId(@PathVariable Long id);
+
+    @Operation(summary = "Listar candidatos por eleição e cargo", description = "Utilizado pelo Eleitor para visualizar candidatos disponíveis antes de votar.")
+    @GetMapping("/eleicao/{idEleicao}/cargo/{idCargo}")
+    ResponseEntity<List<CandidatoResponse>> listarPorEleicaoECargo(@PathVariable Long idEleicao, @PathVariable Long idCargo);
+
+    @Operation(summary = "Listar todos os candidatos")
+    @GetMapping
+    ResponseEntity<List<CandidatoResponse>> listarTodos();
+
+    @Operation(summary = "Excluir candidato", description = "Restrito ao Chefe da Seção.")
+    @PreAuthorize("hasRole('CHEFE_SECAO')")
     @DeleteMapping("/{id}")
-    ResponseEntity<CandidatoDTO> delete(
-            @Parameter(description = "ID do candidato", required = true)
-            @PathVariable("id") Integer id
-    );
+    ResponseEntity<Void> excluir(@PathVariable Long id);
 }
