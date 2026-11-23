@@ -1,17 +1,18 @@
 package com.example.eleicao_service.core.handler;
 
+import com.example.eleicao_service.core.handler.exception.AcessoNegadoException;
 import com.example.eleicao_service.core.handler.exception.EntidadeNaoEncontradaException;
+import com.example.eleicao_service.core.handler.exception.NaoAutenticadoException;
 import com.example.eleicao_service.core.handler.exception.RegraNegocioException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.AccessDeniedException;
+import org.springframework.security.core.AuthenticationException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
-import java.nio.file.AccessDeniedException;
 import java.time.LocalDateTime;
-import java.util.LinkedHashMap;
-import java.util.Map;
 
 @RestControllerAdvice
 public class GlobalExceptionHandler {
@@ -30,14 +31,19 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public ResponseEntity<ErrorResponse> handleValidation(MethodArgumentNotValidException ex) {
-
         return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                .body(new ErrorResponse(404, "Erro de validação", ex.getMessage(), LocalDateTime.now()));
+                .body(new ErrorResponse(400, "Erro de validação", ex.getMessage(), LocalDateTime.now()));
     }
 
-    @ExceptionHandler(AccessDeniedException.class)
-    public ResponseEntity<ErrorResponse> handleAccessDenied(AccessDeniedException ex) {
+    @ExceptionHandler({AuthenticationException.class, NaoAutenticadoException.class})
+    public ResponseEntity<ErrorResponse> handleUnauthorized(Exception ex) {
+        return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                .body(new ErrorResponse(401, "Não autenticado", "Token ausente, inválido ou credenciais incorretas.", LocalDateTime.now()));
+    }
+
+    @ExceptionHandler({AccessDeniedException.class, AcessoNegadoException.class})
+    public ResponseEntity<ErrorResponse> handleAccessDenied(Exception ex) {
         return ResponseEntity.status(HttpStatus.FORBIDDEN)
-                .body(new ErrorResponse(403, "Acesso inválido", "Acesso negado para este perfil.", LocalDateTime.now()));
+                .body(new ErrorResponse(403, "Acesso negado", "Você não tem permissão para acessar este recurso.", LocalDateTime.now()));
     }
 }
