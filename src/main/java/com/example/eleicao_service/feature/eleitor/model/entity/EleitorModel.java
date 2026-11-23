@@ -22,12 +22,12 @@ public class EleitorModel{
     @JoinColumn(name = "id_usuario")
     private UsuarioModel usuario;
 
-    @Column(name = "titulo_eleitor", nullable = false, unique = true, length = 20)
+    @Column(name = "titulo_eleitor", nullable = false, unique = true, length = 12)
     private String tituloEleitor;
 
-    @Column(nullable = false, length = 10)
+    @Column(nullable = false, length = 3)
     private String zona;
 
-    @Column(nullable = false, length = 10)
+    @Column(nullable = false, length = 4)
     private String secao;
 }
