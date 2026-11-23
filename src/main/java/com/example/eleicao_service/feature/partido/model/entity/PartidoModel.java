@@ -1,22 +1,26 @@
 package com.example.eleicao_service.feature.partido.model.entity;
 
 import jakarta.persistence.*;
-import lombok.Getter;
-import lombok.Setter;
+import lombok.*;
 
 @Entity
+@Table(name = "partido")
 @Getter
 @Setter
-@Table(name = "PARTIDO")
+@NoArgsConstructor
+@AllArgsConstructor
+@Builder
 public class PartidoModel {
-
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Integer id;
+    private Long id;
 
-    @Column(name = "id_legenda", nullable = false, unique = true)
-    private Integer idLegenda;
-
-    @Column(nullable = false, unique = true, length = 255)
+    @Column(nullable = false, unique = true, length = 100)
     private String nome;
+
+    @Column(nullable = false, unique = true, length = 20)
+    private String sigla;
+
+    @Column(nullable = false, unique = true)
+    private Integer numero;
 }
