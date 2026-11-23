@@ -1,9 +1,11 @@
 package com.example.eleicao_service.feature.usuario.service.impl;
 
-import com.example.eleicao_service.feature.usuario.model.dto.UsuarioResponse;
-import com.example.eleicao_service.feature.usuario.model.dto.UsuarioUpdateSelfRequest;
 import com.example.eleicao_service.core.handler.exception.EntidadeNaoEncontradaException;
 import com.example.eleicao_service.core.handler.exception.RegraNegocioException;
+import com.example.eleicao_service.feature.usuario.model.Perfil;
+import com.example.eleicao_service.feature.usuario.model.dto.CriarChefeSecaoRequest;
+import com.example.eleicao_service.feature.usuario.model.dto.UsuarioResponse;
+import com.example.eleicao_service.feature.usuario.model.dto.UsuarioUpdateSelfRequest;
 import com.example.eleicao_service.feature.usuario.model.entity.UsuarioModel;
 import com.example.eleicao_service.feature.usuario.repository.UsuarioRepository;
 import com.example.eleicao_service.feature.usuario.service.UsuarioService;
@@ -18,6 +20,29 @@ public class UsuarioServiceImpl implements UsuarioService {
 
     private final UsuarioRepository usuarioRepository;
     private final PasswordEncoder passwordEncoder;
+
+    @Override
+    @Transactional
+    public UsuarioResponse criarChefeSecao(CriarChefeSecaoRequest request) {
+        if (usuarioRepository.existsByUsername(request.username())) {
+            throw new RegraNegocioException("Username já está em uso.");
+        }
+        if (usuarioRepository.existsByCpf(request.cpf())) {
+            throw new RegraNegocioException("CPF já está cadastrado.");
+        }
+
+        UsuarioModel novoChefe = UsuarioModel.builder()
+                .nome(request.nome())
+                .cpf(request.cpf())
+                .username(request.username())
+                .senha(passwordEncoder.encode(request.senha()))
+                .perfil(Perfil.CHEFE_SECAO)
+                .ativo(true)
+                .build();
+
+        UsuarioModel salvo = usuarioRepository.save(novoChefe);
+        return toResponse(salvo);
+    }
 
     @Override
     @Transactional

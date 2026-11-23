@@ -1,5 +1,6 @@
 package com.example.eleicao_service.feature.usuario.controller;
 
+import com.example.eleicao_service.feature.usuario.model.dto.CriarChefeSecaoRequest;
 import com.example.eleicao_service.feature.usuario.model.dto.UsuarioResponse;
 import com.example.eleicao_service.feature.usuario.model.dto.UsuarioUpdateSelfRequest;
 import io.swagger.v3.oas.annotations.Operation;
@@ -9,9 +10,13 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
-@Tag(name = "Usuários", description = "Gerenciamento do próprio perfil do usuário autenticado")
+@Tag(name = "Usuários", description = "Gerenciamento de perfil do usuário autenticado e cadastro de chefes de seção")
 @RequestMapping("/api/usuarios")
 public interface UsuarioController {
+
+    @Operation(summary = "Cadastrar novo chefe de seção", description = "Permite que um Chefe de Seção autenticado cadastre outro Chefe de Seção.")
+    @PostMapping("/chefe-secao")
+    ResponseEntity<UsuarioResponse> criarChefeSecao(@Valid @RequestBody CriarChefeSecaoRequest request);
 
     @Operation(summary = "Consultar meu perfil", description = "Retorna os dados do usuário atualmente autenticado.")
     @GetMapping("/me")
