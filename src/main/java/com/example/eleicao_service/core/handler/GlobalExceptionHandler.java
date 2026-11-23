@@ -8,6 +8,7 @@ import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
+import java.nio.file.AccessDeniedException;
 import java.time.LocalDateTime;
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -16,34 +17,27 @@ import java.util.Map;
 public class GlobalExceptionHandler {
 
     @ExceptionHandler(EntidadeNaoEncontradaException.class)
-    public ResponseEntity<Object> handleNotFound(EntidadeNaoEncontradaException ex) {
-        return buildResponse(HttpStatus.NOT_FOUND, "Recurso não encontrado", ex.getMessage());
+    public ResponseEntity<ErrorResponse> handleNotFound(EntidadeNaoEncontradaException ex) {
+        return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                .body(new ErrorResponse(404, "Recurso não encontrado", ex.getMessage(), LocalDateTime.now()));
     }
 
     @ExceptionHandler(RegraNegocioException.class)
-    public ResponseEntity<Object> handleConflict(RegraNegocioException ex) {
-        return buildResponse(HttpStatus.CONFLICT, "Regra de negócio violada", ex.getMessage());
+    public ResponseEntity<ErrorResponse> handleConflict(RegraNegocioException ex) {
+        return ResponseEntity.status(HttpStatus.CONFLICT)
+                .body(new ErrorResponse(409, "Regra de negócio violada", ex.getMessage(), LocalDateTime.now()));
     }
 
     @ExceptionHandler(MethodArgumentNotValidException.class)
-    public ResponseEntity<Object> handleValidation(MethodArgumentNotValidException ex) {
-        Map<String, Object> body = new LinkedHashMap<>();
-        body.put("status", HttpStatus.BAD_REQUEST.value());
-        body.put("erro", "Erro de Validação");
+    public ResponseEntity<ErrorResponse> handleValidation(MethodArgumentNotValidException ex) {
 
-        Map<String, String> erros = new LinkedHashMap<>();
-        ex.getBindingResult().getFieldErrors().forEach(e -> erros.put(e.getField(), e.getDefaultMessage()));
-        body.put("mensagens", erros);
-
-        return ResponseEntity.badRequest().body(body);
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                .body(new ErrorResponse(404, "Erro de validação", ex.getMessage(), LocalDateTime.now()));
     }
 
-    private ResponseEntity<Object> buildResponse(HttpStatus status, String erro, String msg) {
-        Map<String, Object> body = new LinkedHashMap<>();
-        body.put("timestamp", LocalDateTime.now());
-        body.put("status", status.value());
-        body.put("erro", erro);
-        body.put("mensagem", msg);
-        return ResponseEntity.status(status).body(body);
+    @ExceptionHandler(AccessDeniedException.class)
+    public ResponseEntity<ErrorResponse> handleAccessDenied(AccessDeniedException ex) {
+        return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                .body(new ErrorResponse(403, "Acesso inválido", "Acesso negado para este perfil.", LocalDateTime.now()));
     }
 }
