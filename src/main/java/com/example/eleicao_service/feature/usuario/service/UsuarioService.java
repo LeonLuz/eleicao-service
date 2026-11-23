@@ -1,19 +1,10 @@
 package com.example.eleicao_service.feature.usuario.service;
 
-import com.example.eleicao_service.feature.usuario.model.dto.UsuarioDTO;
-import com.example.eleicao_service.feature.usuario.model.dto.UsuarioInputDTO;
+import com.example.eleicao_service.feature.usuario.model.dto.UsuarioResponse;
+import com.example.eleicao_service.feature.usuario.model.dto.UsuarioUpdateSelfRequest;
 
 public interface UsuarioService {
+    UsuarioResponse atualizarMeusDados(String usernameLogado, UsuarioUpdateSelfRequest request);
 
-    UsuarioDTO findById(Integer id);
-
-    UsuarioDTO insert(UsuarioInputDTO inputDTO);
-
-    UsuarioDTO update(UsuarioInputDTO inputDTO, Integer id);
-
-    UsuarioDTO delete(Integer id);
-
-    UsuarioDTO removerPerfilChefeSecao(Integer id);
-
-    UsuarioDTO removerPerfilEleitor(Integer id);
+    UsuarioResponse buscarMeuPerfil(String usernameLogado);
 }

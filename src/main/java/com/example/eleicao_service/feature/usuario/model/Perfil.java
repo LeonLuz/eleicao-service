@@ -1,7 +1,6 @@
 package com.example.eleicao_service.feature.usuario.model;
 
-public enum Role {
-    USER,
+public enum Perfil {
     CHEFE_SECAO,
     ELEITOR,
     CANDIDATO

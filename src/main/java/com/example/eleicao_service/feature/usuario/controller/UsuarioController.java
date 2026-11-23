@@ -1,30 +1,23 @@
 package com.example.eleicao_service.feature.usuario.controller;
 
-import com.example.eleicao_service.feature.usuario.model.dto.UsuarioDTO;
-import com.example.eleicao_service.feature.usuario.model.dto.UsuarioInputDTO;
+import com.example.eleicao_service.feature.usuario.model.dto.UsuarioResponse;
+import com.example.eleicao_service.feature.usuario.model.dto.UsuarioUpdateSelfRequest;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
-import jakarta.servlet.http.HttpServletRequest;
+import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
+import org.springframework.web.bind.annotation.*;
 
-@Tag(name = "Usuários", description = "Gerenciamento do agregado de Usuários, Eleitores e Chefes de Seção")
+@Tag(name = "Usuários", description = "Gerenciamento do próprio perfil do usuário autenticado")
+@RequestMapping("/api/usuarios")
 public interface UsuarioController {
 
-    @Operation(summary = "Busca um usuário por ID")
-    ResponseEntity<UsuarioDTO> findById(Integer id);
+    @Operation(summary = "Consultar meu perfil", description = "Retorna os dados do usuário atualmente autenticado.")
+    @GetMapping("/me")
+    ResponseEntity<UsuarioResponse> meuPerfil(Authentication authentication);
 
-    @Operation(summary = "Cria um novo usuário e seus perfis (Eleitor/Chefe)")
-    ResponseEntity<UsuarioDTO> insert(UsuarioInputDTO inputDTO);
-
-    @Operation(summary = "Atualiza um usuário e/ou adiciona/edita seus perfis")
-    ResponseEntity<UsuarioDTO> update(UsuarioInputDTO inputDTO, Integer id);
-
-    @Operation(summary = "Desativa um usuário (Soft Delete)")
-    ResponseEntity<UsuarioDTO> delete(Integer id);
-
-    @Operation(summary = "Remove o perfil de Chefe de Seção de um usuário")
-    ResponseEntity<UsuarioDTO> removerChefe(Integer id);
-
-    @Operation(summary = "Remove o perfil de Eleitor de um usuário")
-    ResponseEntity<UsuarioDTO> removerEleitor(Integer id);
+    @Operation(summary = "Editar meus dados", description = "Permite ao usuário alterar username e senha. Nome e CPF só podem ser alterados pelo Chefe da Seção.")
+    @PutMapping("/me")
+    ResponseEntity<UsuarioResponse> atualizarMeusDados(Authentication authentication, @Valid @RequestBody UsuarioUpdateSelfRequest request);
 }
