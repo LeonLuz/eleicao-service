@@ -37,6 +37,8 @@ public class CandidatoServiceImpl implements CandidatoService {
     @Override
     @Transactional
     public CandidatoResponse cadastrar(CandidatoRequest request) {
+        String cpf = request.cpfLimpo();
+
         if (usuarioRepository.existsByCpf(request.cpf()) || usuarioRepository.existsByUsername(request.username())) {
             throw new RegraNegocioException("CPF ou Username já cadastrado.");
         }
@@ -57,7 +59,7 @@ public class CandidatoServiceImpl implements CandidatoService {
 
         UsuarioModel usuario = UsuarioModel.builder()
                 .nome(request.nome())
-                .cpf(request.cpf())
+                .cpf(cpf)
                 .username(request.username())
                 .senha(passwordEncoder.encode(request.senha()))
                 .perfil(Perfil.CANDIDATO)
@@ -83,7 +85,7 @@ public class CandidatoServiceImpl implements CandidatoService {
 
         UsuarioModel usuario = candidato.getUsuario();
         usuario.setNome(request.nome());
-        usuario.setCpf(request.cpf());
+        usuario.setCpf(request.cpfLimpo());
         usuario.setUsername(request.username());
         if (request.senha() != null && !request.senha().isBlank()) {
             usuario.setSenha(passwordEncoder.encode(request.senha()));
