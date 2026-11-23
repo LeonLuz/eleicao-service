@@ -1,6 +1,6 @@
 package com.example.eleicao_service.feature.candidato.model.entity;
 
-import com.example.eleicao_service.feature.cargo.model.entity.CargoModel;
+import com.example.eleicao_service.feature.cargo.model.CargoModel;
 import com.example.eleicao_service.feature.partido.model.entity.PartidoModel;
 import com.example.eleicao_service.feature.usuario.model.entity.UsuarioModel;
 import jakarta.persistence.*;

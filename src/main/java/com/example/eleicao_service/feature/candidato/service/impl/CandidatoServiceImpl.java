@@ -8,7 +8,7 @@ import com.example.eleicao_service.feature.candidato.model.dto.CandidatoInputDTO
 import com.example.eleicao_service.feature.candidato.model.entity.CandidatoModel;
 import com.example.eleicao_service.feature.candidato.repository.CandidatoRepository;
 import com.example.eleicao_service.feature.candidato.service.CandidatoService;
-import com.example.eleicao_service.feature.cargo.model.entity.CargoModel;
+import com.example.eleicao_service.feature.cargo.model.CargoModel;
 import com.example.eleicao_service.feature.cargo.repository.CargoRepository;
 import com.example.eleicao_service.feature.partido.model.entity.PartidoModel;
 import com.example.eleicao_service.feature.partido.repository.PartidoRepository;
