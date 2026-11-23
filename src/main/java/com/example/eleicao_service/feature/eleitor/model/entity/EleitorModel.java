@@ -2,28 +2,32 @@ package com.example.eleicao_service.feature.eleitor.model.entity;
 
 import com.example.eleicao_service.feature.usuario.model.entity.UsuarioModel;
 import jakarta.persistence.*;
-import lombok.Getter;
-import lombok.Setter;
+import lombok.*;
 
 @Entity
-@Table(name = "ELEITOR")
+@Table(name = "eleitor")
 @Getter
 @Setter
-public class EleitorModel {
+@NoArgsConstructor
+@AllArgsConstructor
+@Builder
+public class EleitorModel{
+
     @Id
-    private Integer id;
+    @Column(name = "id_usuario")
+    private Long idUsuario;
 
-    @Column(nullable = false, unique = true, length = 11)
-    private String cpf;
-
-    @Column(nullable = false, unique = true, length = 12)
-    private String titulo;
-
-    @Column(nullable = false)
-    private String nome;
-
-    @OneToOne
+    @OneToOne(cascade = CascadeType.ALL)
     @MapsId
     @JoinColumn(name = "id_usuario")
     private UsuarioModel usuario;
+
+    @Column(name = "titulo_eleitor", nullable = false, unique = true, length = 20)
+    private String tituloEleitor;
+
+    @Column(nullable = false, length = 10)
+    private String zona;
+
+    @Column(nullable = false, length = 10)
+    private String secao;
 }
