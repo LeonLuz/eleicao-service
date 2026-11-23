@@ -1,4 +1,4 @@
-package com.example.eleicao_service.feature.auth.controller;
+package com.example.eleicao_service.feature.auth.controller.impl;
 
 import com.example.eleicao_service.feature.auth.dto.LoginRequest;
 import com.example.eleicao_service.feature.auth.dto.LoginResponse;

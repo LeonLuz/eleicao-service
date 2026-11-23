@@ -1,4 +1,4 @@
-package com.ex.feature.cargo.controller;
+package com.example.eleicao_service.feature.cargo.controller.impl;
 
 
 import com.example.eleicao_service.feature.cargo.controller.CargoController;
