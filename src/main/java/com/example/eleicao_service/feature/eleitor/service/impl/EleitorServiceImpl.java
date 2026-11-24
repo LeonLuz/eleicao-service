@@ -15,7 +15,9 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 @Service
 @RequiredArgsConstructor
@@ -30,24 +32,35 @@ public class EleitorServiceImpl implements EleitorService {
     public EleitorResponse cadastrar(EleitorRequest request) {
         String cpf = request.cpfLimpo();
 
-        if (usuarioRepository.existsByCpf(cpf) || usuarioRepository.existsByUsername(request.username())) {
-            throw new RegraNegocioException("CPF ou Username já cadastrado.");
-        }
         if (eleitorRepository.existsByTituloEleitor(request.tituloEleitor())) {
             throw new RegraNegocioException("Título de eleitor já cadastrado.");
         }
-        if (request.senha() == null || request.senha().isBlank()) {
-            throw new RegraNegocioException("Senha é obrigatória no cadastro.");
-        }
 
-        UsuarioModel usuario = UsuarioModel.builder()
-                .nome(request.nome())
-                .cpf(cpf)
-                .username(request.username())
-                .senha(passwordEncoder.encode(request.senha()))
-                .perfil(Perfil.ELEITOR)
-                .ativo(true)
-                .build();
+        UsuarioModel usuario = usuarioRepository.findByCpf(cpf)
+                .map(existente -> {
+                    if (eleitorRepository.existsById(existente.getId()) || existente.possuiPerfil(Perfil.ELEITOR)) {
+                        throw new RegraNegocioException("Este usuário já está cadastrado como eleitor.");
+                    }
+                    existente.adicionarPerfil(Perfil.ELEITOR);
+                    return usuarioRepository.save(existente);
+                })
+                .orElseGet(() -> {
+                    if (usuarioRepository.existsByUsername(request.username())) {
+                        throw new RegraNegocioException("Username já cadastrado.");
+                    }
+                    if (request.senha() == null || request.senha().isBlank()) {
+                        throw new RegraNegocioException("Senha é obrigatória no cadastro.");
+                    }
+                    UsuarioModel novo = UsuarioModel.builder()
+                            .nome(request.nome())
+                            .cpf(cpf)
+                            .username(request.username())
+                            .senha(passwordEncoder.encode(request.senha()))
+                            .perfis(new HashSet<>(Set.of(Perfil.ELEITOR)))
+                            .ativo(true)
+                            .build();
+                    return usuarioRepository.save(novo);
+                });
 
         EleitorModel eleitor = eleitorRepository.save(EleitorModel.builder()
                 .usuario(usuario)
@@ -109,7 +122,17 @@ public class EleitorServiceImpl implements EleitorService {
     public void excluir(Long id) {
         EleitorModel eleitor = eleitorRepository.findById(id)
                 .orElseThrow(() -> new EntidadeNaoEncontradaException("Eleitor não encontrado."));
+
+        UsuarioModel usuario = eleitor.getUsuario();
+        usuario.getPerfis().remove(Perfil.ELEITOR);
+
         eleitorRepository.delete(eleitor);
+
+        if (usuario.getPerfis().isEmpty()) {
+            usuarioRepository.delete(usuario);
+        } else {
+            usuarioRepository.save(usuario);
+        }
     }
 
     private EleitorResponse toResponse(EleitorModel e) {

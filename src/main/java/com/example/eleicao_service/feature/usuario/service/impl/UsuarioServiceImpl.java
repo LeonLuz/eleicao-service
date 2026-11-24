@@ -14,6 +14,9 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.HashSet;
+import java.util.Set;
+
 @Service
 @RequiredArgsConstructor
 public class UsuarioServiceImpl implements UsuarioService {
@@ -24,24 +27,33 @@ public class UsuarioServiceImpl implements UsuarioService {
     @Override
     @Transactional
     public UsuarioResponse criarChefeSecao(CriarChefeSecaoRequest request) {
-        if (usuarioRepository.existsByUsername(request.username())) {
-            throw new RegraNegocioException("Username já está em uso.");
-        }
-        if (usuarioRepository.existsByCpf(request.cpf())) {
-            throw new RegraNegocioException("CPF já está cadastrado.");
-        }
+        UsuarioModel usuario = usuarioRepository.findByCpf(request.cpf())
+                .map(existente -> {
+                    if (existente.possuiPerfil(Perfil.CANDIDATO)) {
+                        throw new RegraNegocioException("Um candidato não pode ser cadastrado como chefe de seção.");
+                    }
+                    if (existente.possuiPerfil(Perfil.CHEFE_SECAO)) {
+                        throw new RegraNegocioException("Este usuário já possui o perfil de chefe de seção.");
+                    }
+                    existente.adicionarPerfil(Perfil.CHEFE_SECAO);
+                    return usuarioRepository.save(existente);
+                })
+                .orElseGet(() -> {
+                    if (usuarioRepository.existsByUsername(request.username())) {
+                        throw new RegraNegocioException("Username já está em uso.");
+                    }
+                    UsuarioModel novoChefe = UsuarioModel.builder()
+                            .nome(request.nome())
+                            .cpf(request.cpf())
+                            .username(request.username())
+                            .senha(passwordEncoder.encode(request.senha()))
+                            .perfis(new HashSet<>(Set.of(Perfil.CHEFE_SECAO)))
+                            .ativo(true)
+                            .build();
+                    return usuarioRepository.save(novoChefe);
+                });
 
-        UsuarioModel novoChefe = UsuarioModel.builder()
-                .nome(request.nome())
-                .cpf(request.cpf())
-                .username(request.username())
-                .senha(passwordEncoder.encode(request.senha()))
-                .perfil(Perfil.CHEFE_SECAO)
-                .ativo(true)
-                .build();
-
-        UsuarioModel salvo = usuarioRepository.save(novoChefe);
-        return toResponse(salvo);
+        return toResponse(usuario);
     }
 
     @Override
@@ -71,6 +83,6 @@ public class UsuarioServiceImpl implements UsuarioService {
     }
 
     private UsuarioResponse toResponse(UsuarioModel u) {
-        return new UsuarioResponse(u.getId(), u.getNome(), u.getCpf(), u.getUsername(), u.getPerfil(), u.getAtivo());
+        return new UsuarioResponse(u.getId(), u.getNome(), u.getCpf(), u.getUsername(), u.getPerfis(), u.getAtivo());
     }
 }

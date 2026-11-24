@@ -9,6 +9,9 @@ import org.springframework.boot.CommandLineRunner;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
+import java.util.HashSet;
+import java.util.Set;
+
 @Configuration
 @RequiredArgsConstructor
 public class AdminConfig implements CommandLineRunner {
@@ -30,7 +33,7 @@ public class AdminConfig implements CommandLineRunner {
                     .cpf("00000000000")
                     .username(adminUsername)
                     .senha(passwordEncoder.encode(adminPassword))
-                    .perfil(Perfil.CHEFE_SECAO)
+                    .perfis(new HashSet<>(Set.of(Perfil.CHEFE_SECAO)))
                     .ativo(true)
                     .build();
 

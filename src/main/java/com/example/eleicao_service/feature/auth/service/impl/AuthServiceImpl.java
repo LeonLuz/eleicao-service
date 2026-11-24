@@ -13,6 +13,9 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Service;
 
+import java.util.Set;
+import java.util.stream.Collectors;
+
 @Service
 @RequiredArgsConstructor
 public class AuthServiceImpl implements AuthService {
@@ -31,6 +34,10 @@ public class AuthServiceImpl implements AuthService {
         UsuarioModel usuario = usuarioRepository.findByUsername(request.username()).orElseThrow();
         String token = jwtService.generateToken(userDetails);
 
-        return new LoginResponse(token, "Bearer", usuario.getPerfil().name(), usuario.getNome());
+        Set<String> perfis = usuario.getPerfis().stream()
+                .map(Enum::name)
+                .collect(Collectors.toSet());
+
+        return new LoginResponse(token, "Bearer", perfis, usuario.getNome());
     }
 }

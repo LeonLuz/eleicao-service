@@ -46,7 +46,7 @@ public class VotacaoServiceImpl implements VotacaoService {
         UsuarioModel usuario = usuarioRepository.findByUsername(usernameEleitor)
                 .orElseThrow(() -> new EntidadeNaoEncontradaException("Usuário não encontrado."));
 
-        if (usuario.getPerfil() != Perfil.ELEITOR) {
+        if (!usuario.possuiPerfil(Perfil.ELEITOR)) {
             throw new RegraNegocioException("Apenas usuários com perfil ELEITOR podem votar.");
         }
 
@@ -106,7 +106,11 @@ public class VotacaoServiceImpl implements VotacaoService {
 
         List<CandidatoModel> candidatos;
 
-        if (usuario.getPerfil() == Perfil.CANDIDATO) {
+        boolean apenasCandidato = usuario.possuiPerfil(Perfil.CANDIDATO)
+                && !usuario.possuiPerfil(Perfil.ELEITOR)
+                && !usuario.possuiPerfil(Perfil.CHEFE_SECAO);
+
+        if (apenasCandidato) {
             CandidatoModel candidatoLogado = candidatoRepository.findById(usuario.getId())
                     .orElseThrow(() -> new EntidadeNaoEncontradaException("Candidato não encontrado."));
             candidatos = candidatoRepository.findByEleicaoIdAndCargoId(idEleicao, candidatoLogado.getCargo().getId());

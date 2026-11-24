@@ -3,12 +3,11 @@ package com.example.eleicao_service.feature.usuario.model.entity;
 import com.example.eleicao_service.feature.usuario.model.Perfil;
 import jakarta.persistence.*;
 import lombok.*;
-import org.springframework.security.core.GrantedAuthority;
-import org.springframework.security.core.authority.SimpleGrantedAuthority;
-import org.springframework.security.core.userdetails.UserDetails;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
 
-import java.util.Collection;
-import java.util.List;
+import java.util.HashSet;
+import java.util.Set;
 
 @Entity
 @Table(name = "usuario")
@@ -17,7 +16,7 @@ import java.util.List;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class UsuarioModel implements UserDetails {
+public class UsuarioModel {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -32,36 +31,26 @@ public class UsuarioModel implements UserDetails {
     @Column(nullable = false, unique = true, length = 150)
     private String username;
 
-    @Column(nullable = false, length = 255)
+    @Column(nullable = false)
     private String senha;
 
-    @Enumerated(EnumType.STRING)
-    @Column(nullable = false)
-    private Perfil perfil;
+    @JdbcTypeCode(SqlTypes.JSON)
+    @Column(name = "perfis", columnDefinition = "json", nullable = false)
+    @Builder.Default
+    private Set<Perfil> perfis = new HashSet<>();
 
     @Column(nullable = false)
+    @Builder.Default
     private Boolean ativo = true;
 
-    @Override
-    public Collection<? extends GrantedAuthority> getAuthorities() {
-        return List.of(new SimpleGrantedAuthority("ROLE_" + perfil.name()));
+    public void adicionarPerfil(Perfil perfil) {
+        if (this.perfis == null) {
+            this.perfis = new HashSet<>();
+        }
+        this.perfis.add(perfil);
     }
 
-    @Override
-    public String getPassword() { return senha; }
-
-    @Override
-    public String getUsername() { return username; }
-
-    @Override
-    public boolean isAccountNonExpired() { return true; }
-
-    @Override
-    public boolean isAccountNonLocked() { return true; }
-
-    @Override
-    public boolean isCredentialsNonExpired() { return true; }
-
-    @Override
-    public boolean isEnabled() { return Boolean.TRUE.equals(ativo); }
+    public boolean possuiPerfil(Perfil perfil) {
+        return this.perfis != null && this.perfis.contains(perfil);
+    }
 }

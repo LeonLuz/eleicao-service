@@ -3,6 +3,7 @@ package com.example.eleicao_service.core.security;
 import com.example.eleicao_service.feature.usuario.model.entity.UsuarioModel;
 import com.example.eleicao_service.feature.usuario.repository.UsuarioRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.User;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
@@ -20,10 +21,15 @@ public class CustomUserDetailsService implements UserDetailsService {
         UsuarioModel usuario = usuarioRepository.findByUsername(username)
                 .orElseThrow(() -> new UsernameNotFoundException("Usuário não encontrado: " + username));
 
+        var authorities = usuario.getPerfis().stream()
+                .map(perfil -> new SimpleGrantedAuthority("ROLE_" + perfil.name()))
+                .toList();
+
         return User.builder()
                 .username(usuario.getUsername())
                 .password(usuario.getSenha())
-                .roles(usuario.getPerfil().name())
+                .disabled(!Boolean.TRUE.equals(usuario.getAtivo()))
+                .authorities(authorities)
                 .build();
     }
 }

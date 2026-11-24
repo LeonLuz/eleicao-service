@@ -21,7 +21,9 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 @Service
 @RequiredArgsConstructor
@@ -39,15 +41,9 @@ public class CandidatoServiceImpl implements CandidatoService {
     public CandidatoResponse cadastrar(CandidatoRequest request) {
         String cpf = request.cpfLimpo();
 
-        if (usuarioRepository.existsByCpf(cpf) || usuarioRepository.existsByUsername(request.username())) {
-            throw new RegraNegocioException("CPF ou Username já cadastrado.");
-        }
         if (candidatoRepository.existsByNumeroEleitoralAndCargoIdAndEleicaoId(
                 request.numeroEleitoral(), request.idCargo(), request.idEleicao())) {
             throw new RegraNegocioException("Já existe candidato com este número para este cargo nesta eleição.");
-        }
-        if (request.senha() == null || request.senha().isBlank()) {
-            throw new RegraNegocioException("Senha é obrigatória no cadastro.");
         }
 
         PartidoModel partido = partidoRepository.findById(request.idPartido())
@@ -57,14 +53,34 @@ public class CandidatoServiceImpl implements CandidatoService {
         EleicaoModel eleicao = eleicaoRepository.findById(request.idEleicao())
                 .orElseThrow(() -> new EntidadeNaoEncontradaException("Eleição não encontrada."));
 
-        UsuarioModel usuario = UsuarioModel.builder()
-                .nome(request.nome())
-                .cpf(cpf)
-                .username(request.username())
-                .senha(passwordEncoder.encode(request.senha()))
-                .perfil(Perfil.CANDIDATO)
-                .ativo(true)
-                .build();
+        UsuarioModel usuario = usuarioRepository.findByCpf(cpf)
+                .map(existente -> {
+                    if (existente.possuiPerfil(Perfil.CHEFE_SECAO)) {
+                        throw new RegraNegocioException("Um chefe de seção não pode ser cadastrado como candidato.");
+                    }
+                    if (candidatoRepository.existsById(existente.getId()) || existente.possuiPerfil(Perfil.CANDIDATO)) {
+                        throw new RegraNegocioException("Este usuário já está cadastrado como candidato.");
+                    }
+                    existente.adicionarPerfil(Perfil.CANDIDATO);
+                    return usuarioRepository.save(existente);
+                })
+                .orElseGet(() -> {
+                    if (usuarioRepository.existsByUsername(request.username())) {
+                        throw new RegraNegocioException("Username já cadastrado.");
+                    }
+                    if (request.senha() == null || request.senha().isBlank()) {
+                        throw new RegraNegocioException("Senha é obrigatória no cadastro.");
+                    }
+                    UsuarioModel novo = UsuarioModel.builder()
+                            .nome(request.nome())
+                            .cpf(cpf)
+                            .username(request.username())
+                            .senha(passwordEncoder.encode(request.senha()))
+                            .perfis(new HashSet<>(Set.of(Perfil.CANDIDATO)))
+                            .ativo(true)
+                            .build();
+                    return usuarioRepository.save(novo);
+                });
 
         CandidatoModel candidato = candidatoRepository.save(CandidatoModel.builder()
                 .usuario(usuario)
@@ -140,7 +156,17 @@ public class CandidatoServiceImpl implements CandidatoService {
     public void excluir(Long id) {
         CandidatoModel candidato = candidatoRepository.findById(id)
                 .orElseThrow(() -> new EntidadeNaoEncontradaException("Candidato não encontrado."));
+
+        UsuarioModel usuario = candidato.getUsuario();
+        usuario.getPerfis().remove(Perfil.CANDIDATO);
+
         candidatoRepository.delete(candidato);
+
+        if (usuario.getPerfis().isEmpty()) {
+            usuarioRepository.delete(usuario);
+        } else {
+            usuarioRepository.save(usuario);
+        }
     }
 
     private CandidatoResponse toResponse(CandidatoModel c) {
