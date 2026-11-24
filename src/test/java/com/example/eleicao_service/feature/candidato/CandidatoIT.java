@@ -7,6 +7,7 @@ import org.junit.jupiter.api.Test;
 import static org.hamcrest.Matchers.contains;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
@@ -139,5 +140,25 @@ class CandidatoIT extends AbstractIntegrationTest {
         // o eleitor pode consultar os candidatos disponíveis
         mockMvc.perform(comToken(get("/api/candidatos/eleicao/{e}/cargo/{c}", eleicao, CARGO_GOVERNADOR), eleitor))
                 .andExpect(status().isOk());
+    }
+
+    @Test
+    void naoPermiteCadastrarAlterarOuExcluirCandidatoComEleicaoAberta() throws Exception {
+        long id = criarCandidato(chefe, "ana", 10, partido, CARGO_GOVERNADOR, eleicao);
+        String cpfAna = jdbc.queryForObject("SELECT cpf FROM usuario WHERE id = ?", String.class, id);
+
+        mockMvc.perform(comToken(patch("/api/eleicoes/{id}/abrir", eleicao), chefe))
+                .andExpect(status().isOk());
+
+        mockMvc.perform(comToken(json(post("/api/candidatos"),
+                        candidatoJson("bia", cpfValido(850), 20, partido, CARGO_GOVERNADOR, eleicao)), chefe))
+                .andExpect(status().isConflict());
+
+        mockMvc.perform(comToken(json(put("/api/candidatos/{id}", id),
+                        candidatoJson("ana", cpfAna, 15, partido, CARGO_GOVERNADOR, eleicao)), chefe))
+                .andExpect(status().isConflict());
+
+        mockMvc.perform(comToken(delete("/api/candidatos/{id}", id), chefe))
+                .andExpect(status().isConflict());
     }
 }

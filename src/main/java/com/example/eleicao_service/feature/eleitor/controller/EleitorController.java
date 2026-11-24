@@ -66,7 +66,8 @@ public interface EleitorController {
             @ApiResponse(responseCode = "204", description = "Eleitor excluído com sucesso", content = @Content),
             @ApiResponse(responseCode = "401", description = "Não autenticado", content = @Content),
             @ApiResponse(responseCode = "403", description = "Acesso negado (requer perfil CHEFE_SECAO)", content = @Content),
-            @ApiResponse(responseCode = "404", description = "Eleitor não encontrado", content = @Content)
+            @ApiResponse(responseCode = "404", description = "Eleitor não encontrado", content = @Content),
+            @ApiResponse(responseCode = "409", description = "Eleitor já registrou voto e não pode ser excluído", content = @Content)
     })
     @DeleteMapping("/{id}")
     ResponseEntity<Void> excluir(@PathVariable Long id);

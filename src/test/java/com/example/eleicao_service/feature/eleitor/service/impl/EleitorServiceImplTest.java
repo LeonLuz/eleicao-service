@@ -9,6 +9,7 @@ import com.example.eleicao_service.feature.eleitor.repository.EleitorRepository;
 import com.example.eleicao_service.feature.usuario.model.Perfil;
 import com.example.eleicao_service.feature.usuario.model.entity.UsuarioModel;
 import com.example.eleicao_service.feature.usuario.repository.UsuarioRepository;
+import com.example.eleicao_service.feature.votacao.repository.ControleVotoRepository;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
@@ -31,6 +32,7 @@ class EleitorServiceImplTest {
 
     @Mock private EleitorRepository eleitorRepository;
     @Mock private UsuarioRepository usuarioRepository;
+    @Mock private ControleVotoRepository controleVotoRepository;
     @Mock private PasswordEncoder passwordEncoder;
 
     @InjectMocks
@@ -189,5 +191,18 @@ class EleitorServiceImplTest {
         verify(usuarioRepository).save(usuario);
         verify(usuarioRepository, never()).delete(any());
         assertThat(usuario.getPerfis()).containsExactly(Perfil.CANDIDATO);
+    }
+
+    @Test
+    void excluir_impedeQuandoEleitorJaRegistrouVoto() {
+        EleitorModel existente = eleitor(usuario(1L, Perfil.ELEITOR));
+        when(eleitorRepository.findById(1L)).thenReturn(Optional.of(existente));
+        when(controleVotoRepository.existsByEleitorIdUsuario(1L)).thenReturn(true);
+
+        assertThatThrownBy(() -> service.excluir(1L))
+                .isInstanceOf(RegraNegocioException.class)
+                .hasMessageContaining("voto");
+        verify(eleitorRepository, never()).delete(any());
+        verify(usuarioRepository, never()).delete(any());
     }
 }
