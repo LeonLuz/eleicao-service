@@ -161,6 +161,12 @@ public class CandidatoServiceImpl implements CandidatoService {
 
     @Override
     public List<CandidatoResponse> listarPorEleicaoECargo(Long idEleicao, Long idCargo) {
+        if (!eleicaoRepository.existsById(idEleicao)) {
+            throw new EntidadeNaoEncontradaException("Eleição não encontrada.");
+        }
+        if (!cargoRepository.existsById(idCargo)) {
+            throw new EntidadeNaoEncontradaException("Cargo não encontrado.");
+        }
         return candidatoRepository.findByEleicaoIdAndCargoId(idEleicao, idCargo)
                 .stream().map(this::toResponse).toList();
     }
@@ -196,7 +202,7 @@ public class CandidatoServiceImpl implements CandidatoService {
     }
 
     private CandidatoResponse toResponse(CandidatoModel c) {
-        return new CandidatoResponse(c.getIdUsuario(), c.getUsuario().getNome(), c.getUsuario().getCpf(),
+        return new CandidatoResponse(c.getIdUsuario(), c.getUsuario().getNome(),
                 c.getNumeroEleitoral(), c.getPartido().getSigla(), c.getCargo().getNome(), c.getEleicao().getId());
     }
 }

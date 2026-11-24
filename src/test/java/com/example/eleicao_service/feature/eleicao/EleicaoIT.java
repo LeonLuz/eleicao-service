@@ -99,4 +99,21 @@ class EleicaoIT extends AbstractIntegrationTest {
         mockMvc.perform(comToken(get("/api/eleicoes/{id}", 999_999), tokenChefe()))
                 .andExpect(status().isNotFound());
     }
+
+    @Test
+    void turnoInvalidoOuParametroDeTipoInvalidoRetorna400() throws Exception {
+        String chefe = tokenChefe();
+        mockMvc.perform(comToken(json(post("/api/eleicoes"), """
+                        {"descricao": "Turno Zero", "dataEleicao": "2026-10-04", "turno": 0,
+                         "horarioAbertura": "08:00:00", "horarioEncerramento": "17:00:00"}"""), chefe))
+                .andExpect(status().isBadRequest());
+
+        mockMvc.perform(comToken(json(post("/api/eleicoes"), """
+                        {"descricao": "Turno Três", "dataEleicao": "2026-10-04", "turno": 3,
+                         "horarioAbertura": "08:00:00", "horarioEncerramento": "17:00:00"}"""), chefe))
+                .andExpect(status().isBadRequest());
+
+        mockMvc.perform(comToken(get("/api/eleicoes/nao-numerico"), chefe))
+                .andExpect(status().isBadRequest());
+    }
 }

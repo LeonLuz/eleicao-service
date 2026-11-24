@@ -32,7 +32,7 @@ class PartidoIT extends AbstractIntegrationTest {
     }
 
     @Test
-    void naoPermiteNumeroOuSiglaDuplicados() throws Exception {
+    void naoPermiteNumeroSiglaOuNomeDuplicados() throws Exception {
         String chefe = tokenChefe();
         criarPartido(chefe, "PA", 10);
 
@@ -43,12 +43,21 @@ class PartidoIT extends AbstractIntegrationTest {
         mockMvc.perform(comToken(json(post("/api/partidos"), """
                         {"nome": "Partido Alternativo", "sigla": "PA", "numero": 30}"""), chefe))
                 .andExpect(status().isConflict());
+
+        mockMvc.perform(comToken(json(post("/api/partidos"), """
+                        {"nome": "Partido PA", "sigla": "PPA", "numero": 40}"""), chefe))
+                .andExpect(status().isConflict());
     }
 
     @Test
-    void camposObrigatoriosAusentesRetornam400() throws Exception {
+    void camposObrigatoriosAusentesOuInvalidosRetornam400() throws Exception {
+        String chefe = tokenChefe();
         mockMvc.perform(comToken(json(post("/api/partidos"), """
-                        {"nome": "", "sigla": "PA"}"""), tokenChefe()))
+                        {"nome": "", "sigla": "PA"}"""), chefe))
+                .andExpect(status().isBadRequest());
+
+        mockMvc.perform(comToken(json(post("/api/partidos"), """
+                        {"nome": "Partido Zero", "sigla": "PZ", "numero": 0}"""), chefe))
                 .andExpect(status().isBadRequest());
     }
 

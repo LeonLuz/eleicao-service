@@ -60,6 +60,14 @@ class PartidoServiceImplTest {
     }
 
     @Test
+    void cadastrar_impedeNomeDuplicado() {
+        when(partidoRepository.existsByNome("Partido Azul")).thenReturn(true);
+
+        assertThatThrownBy(() -> service.cadastrar(request)).isInstanceOf(RegraNegocioException.class);
+        verify(partidoRepository, never()).save(any());
+    }
+
+    @Test
     void listarTodos_mapeiaParaResponse() {
         when(partidoRepository.findAll()).thenReturn(List.of(partido(1L, "PA", 10), partido(2L, "PB", 20)));
 

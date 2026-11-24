@@ -105,6 +105,18 @@ class AuthIT extends AbstractIntegrationTest {
         mockMvc.perform(comToken(json(post("/api/usuarios/chefe-secao"), """
                         {"nome": "Chefe", "cpf": "12345678900", "username": "chefe2", "senha": "segredo"}"""),
                         tokenChefe()))
-                .andExpect(status().isBadRequest());
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.message").value(org.hamcrest.Matchers.containsString("CPF inválido")));
+    }
+
+    @Test
+    void tokenDeUsuarioDesativadoRetorna401() throws Exception {
+        criarEleitor(tokenChefe(), "maria");
+        String token = login("maria", "senha123");
+
+        jdbc.update("UPDATE usuario SET ativo = FALSE WHERE username = 'maria'");
+
+        mockMvc.perform(comToken(get("/api/usuarios/me"), token))
+                .andExpect(status().isUnauthorized());
     }
 }

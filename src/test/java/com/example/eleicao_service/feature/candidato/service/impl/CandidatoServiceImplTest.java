@@ -251,6 +251,8 @@ class CandidatoServiceImplTest {
     @Test
     void listarPorEleicaoECargo_retornaCandidatosDaConsulta() {
         CandidatoModel c = candidato(usuario(50L, Perfil.CANDIDATO), 10, partido, cargo, eleicao);
+        when(eleicaoRepository.existsById(100L)).thenReturn(true);
+        when(cargoRepository.existsById(4L)).thenReturn(true);
         when(candidatoRepository.findByEleicaoIdAndCargoId(100L, 4L)).thenReturn(List.of(c));
 
         assertThat(service.listarPorEleicaoECargo(100L, 4L))
@@ -259,6 +261,29 @@ class CandidatoServiceImplTest {
                     assertThat(r.idUsuario()).isEqualTo(50L);
                     assertThat(r.idEleicao()).isEqualTo(100L);
                 });
+        assertThat(CandidatoResponse.class.getRecordComponents())
+                .noneMatch(rc -> "cpf".equals(rc.getName()));
+    }
+
+    @Test
+    void listarPorEleicaoECargo_falhaQuandoEleicaoNaoExiste() {
+        when(eleicaoRepository.existsById(999L)).thenReturn(false);
+
+        assertThatThrownBy(() -> service.listarPorEleicaoECargo(999L, 4L))
+                .isInstanceOf(EntidadeNaoEncontradaException.class)
+                .hasMessageContaining("Eleição");
+        verifyNoInteractions(candidatoRepository);
+    }
+
+    @Test
+    void listarPorEleicaoECargo_falhaQuandoCargoNaoExiste() {
+        when(eleicaoRepository.existsById(100L)).thenReturn(true);
+        when(cargoRepository.existsById(999L)).thenReturn(false);
+
+        assertThatThrownBy(() -> service.listarPorEleicaoECargo(100L, 999L))
+                .isInstanceOf(EntidadeNaoEncontradaException.class)
+                .hasMessageContaining("Cargo");
+        verifyNoInteractions(candidatoRepository);
     }
 
     @Test

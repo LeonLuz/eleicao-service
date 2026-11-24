@@ -35,7 +35,8 @@ class CandidatoIT extends AbstractIntegrationTest {
                 .andExpect(jsonPath("$.numeroEleitoral").value(10))
                 .andExpect(jsonPath("$.partidoSigla").value("PA"))
                 .andExpect(jsonPath("$.cargoNome").value("Governador"))
-                .andExpect(jsonPath("$.idEleicao").value(eleicao));
+                .andExpect(jsonPath("$.idEleicao").value(eleicao))
+                .andExpect(jsonPath("$.cpf").doesNotExist());
 
         mockMvc.perform(comToken(json(put("/api/candidatos/{id}", id),
                         candidatoJson("ana", cpfValido(500), 11, partido, CARGO_GOVERNADOR, eleicao)), chefe))
@@ -122,6 +123,14 @@ class CandidatoIT extends AbstractIntegrationTest {
     void partidoInexistenteRetorna404() throws Exception {
         mockMvc.perform(comToken(json(post("/api/candidatos"),
                         candidatoJson("ana", cpfValido(700), 10, 999_999, CARGO_GOVERNADOR, eleicao)), chefe))
+                .andExpect(status().isNotFound());
+    }
+
+    @Test
+    void listarPorEleicaoOuCargoInexistenteRetorna404() throws Exception {
+        mockMvc.perform(comToken(get("/api/candidatos/eleicao/{e}/cargo/{c}", 999_999, CARGO_GOVERNADOR), chefe))
+                .andExpect(status().isNotFound());
+        mockMvc.perform(comToken(get("/api/candidatos/eleicao/{e}/cargo/{c}", eleicao, 999_999), chefe))
                 .andExpect(status().isNotFound());
     }
 
