@@ -28,7 +28,9 @@ public class EleitorServiceImpl implements EleitorService {
     @Override
     @Transactional
     public EleitorResponse cadastrar(EleitorRequest request) {
-        if (usuarioRepository.existsByCpf(request.cpf()) || usuarioRepository.existsByUsername(request.username())) {
+        String cpf = request.cpfLimpo();
+
+        if (usuarioRepository.existsByCpf(cpf) || usuarioRepository.existsByUsername(request.username())) {
             throw new RegraNegocioException("CPF ou Username já cadastrado.");
         }
         if (eleitorRepository.existsByTituloEleitor(request.tituloEleitor())) {
@@ -40,7 +42,7 @@ public class EleitorServiceImpl implements EleitorService {
 
         UsuarioModel usuario = UsuarioModel.builder()
                 .nome(request.nome())
-                .cpf(request.cpf())
+                .cpf(cpf)
                 .username(request.username())
                 .senha(passwordEncoder.encode(request.senha()))
                 .perfil(Perfil.ELEITOR)
@@ -64,8 +66,9 @@ public class EleitorServiceImpl implements EleitorService {
                 .orElseThrow(() -> new EntidadeNaoEncontradaException("Eleitor não encontrado."));
 
         UsuarioModel usuario = eleitor.getUsuario();
+        String cpf = request.cpfLimpo();
 
-        if (!usuario.getCpf().equals(request.cpf()) && usuarioRepository.existsByCpf(request.cpf())) {
+        if (!usuario.getCpf().equals(cpf) && usuarioRepository.existsByCpf(cpf)) {
             throw new RegraNegocioException("CPF já cadastrado.");
         }
         if (!usuario.getUsername().equals(request.username()) && usuarioRepository.existsByUsername(request.username())) {
@@ -77,7 +80,7 @@ public class EleitorServiceImpl implements EleitorService {
         }
 
         usuario.setNome(request.nome());
-        usuario.setCpf(request.cpf());
+        usuario.setCpf(cpf);
         usuario.setUsername(request.username());
         if (request.senha() != null && !request.senha().isBlank()) {
             usuario.setSenha(passwordEncoder.encode(request.senha()));

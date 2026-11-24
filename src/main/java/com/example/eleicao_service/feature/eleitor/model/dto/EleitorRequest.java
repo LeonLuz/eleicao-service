@@ -3,11 +3,13 @@ package com.example.eleicao_service.feature.eleitor.model.dto;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Pattern;
-import jakarta.validation.constraints.Size;
+import org.hibernate.validator.constraints.br.CPF;
 
 public record EleitorRequest(
         @NotBlank String nome,
-        @NotBlank @Size(min = 11, max = 11) String cpf,
+        @NotBlank
+        @CPF(message = "CPF inválido")
+        String cpf,
         @NotBlank String username,
         String senha,
 
@@ -25,4 +27,8 @@ public record EleitorRequest(
         @Pattern(regexp = "^\\d{4}$", message = "Seção deve conter exatamente 4 dígitos numéricos")
         @Schema(example = "0045")
         String secao
-) {}
+) {
+    public String cpfLimpo() {
+        return cpf != null ? cpf.replaceAll("\\D", "") : null;
+    }
+}
