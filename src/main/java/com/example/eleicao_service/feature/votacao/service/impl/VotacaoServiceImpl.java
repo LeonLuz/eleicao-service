@@ -86,7 +86,6 @@ public class VotacaoServiceImpl implements VotacaoService {
                 .eleicao(eleicao)
                 .cargo(candidato.getCargo())
                 .candidato(candidato)
-                .dataHora(agora)
                 .build());
 
         return new VotoConfirmacaoResponse("Voto confirmado com sucesso!", candidato.getCargo().getNome(), agora);

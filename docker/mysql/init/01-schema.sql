@@ -67,11 +67,10 @@ CREATE TABLE controle_voto (
 );
 
 CREATE TABLE voto (
-    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    id CHAR(36) PRIMARY KEY,
     id_eleicao BIGINT NOT NULL,
     id_cargo BIGINT NOT NULL,
     id_candidato BIGINT NOT NULL,
-    data_hora DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     CONSTRAINT fk_voto_eleicao FOREIGN KEY (id_eleicao) REFERENCES eleicao(id),
     CONSTRAINT fk_voto_cargo FOREIGN KEY (id_cargo) REFERENCES cargo(id),
     CONSTRAINT fk_voto_candidato FOREIGN KEY (id_candidato) REFERENCES candidato(id_usuario)

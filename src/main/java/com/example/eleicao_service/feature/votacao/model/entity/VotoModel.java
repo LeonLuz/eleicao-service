@@ -5,8 +5,10 @@ import com.example.eleicao_service.feature.cargo.model.CargoModel;
 import com.example.eleicao_service.feature.eleicao.model.entity.EleicaoModel;
 import jakarta.persistence.*;
 import lombok.*;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
 
-import java.time.LocalDateTime;
+import java.util.UUID;
 
 @Entity
 @Table(name = "voto")
@@ -14,8 +16,10 @@ import java.time.LocalDateTime;
 public class VotoModel {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+    @GeneratedValue(strategy = GenerationType.UUID)
+    @JdbcTypeCode(SqlTypes.CHAR)
+    @Column(length = 36)
+    private UUID id;
 
     @ManyToOne(optional = false)
     @JoinColumn(name = "id_eleicao", nullable = false)
@@ -28,7 +32,4 @@ public class VotoModel {
     @ManyToOne(optional = false)
     @JoinColumn(name = "id_candidato", nullable = false)
     private CandidatoModel candidato;
-
-    @Column(name = "data_hora", nullable = false)
-    private LocalDateTime dataHora;
 }
