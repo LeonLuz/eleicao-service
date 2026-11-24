@@ -85,4 +85,18 @@ class AuthIT extends AbstractIntegrationTest {
                 .andExpect(jsonPath("$.perfis").value(contains("CHEFE_SECAO")));
         login("chefe2", "segredo");
     }
+
+    @Test
+    void tokenAntigoAposTrocarOUsernameRetorna401() throws Exception {
+        criarEleitor(tokenChefe(), "maria");
+        String token = login("maria", "senha123");
+
+        mockMvc.perform(comToken(json(put("/api/usuarios/me"), """
+                        {"username": "maria2"}"""), token))
+                .andExpect(status().isOk());
+
+        mockMvc.perform(comToken(get("/api/usuarios/me"), token))
+                .andExpect(status().isUnauthorized());
+        login("maria2", "senha123");
+    }
 }
