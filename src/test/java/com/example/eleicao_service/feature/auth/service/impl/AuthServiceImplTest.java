@@ -48,8 +48,22 @@ class AuthServiceImplTest {
 
         assertThat(resposta.token()).isEqualTo("jwt-token");
         assertThat(resposta.tipo()).isEqualTo("Bearer");
-        assertThat(resposta.perfil()).isEqualTo("ELEITOR");
+        assertThat(resposta.perfis()).containsExactly("ELEITOR");
         assertThat(resposta.nome()).isEqualTo(usuario.getNome());
+    }
+
+    @Test
+    void login_retornaTodosOsPerfisDoUsuario() {
+        UsuarioModel usuario = usuario(1L, Perfil.ELEITOR, Perfil.CANDIDATO);
+        UserDetails principal = User.withUsername("user1").password("hash").roles("ELEITOR", "CANDIDATO").build();
+        when(authenticationManager.authenticate(any()))
+                .thenReturn(new UsernamePasswordAuthenticationToken(principal, null, principal.getAuthorities()));
+        when(usuarioRepository.findByUsername("user1")).thenReturn(Optional.of(usuario));
+        when(jwtService.generateToken(principal)).thenReturn("jwt-token");
+
+        LoginResponse resposta = service.login(new LoginRequest("user1", "senha"));
+
+        assertThat(resposta.perfis()).containsExactlyInAnyOrder("ELEITOR", "CANDIDATO");
     }
 
     @Test

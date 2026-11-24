@@ -4,6 +4,7 @@ import com.example.eleicao_service.support.AbstractIntegrationTest;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import static org.hamcrest.Matchers.contains;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
@@ -53,7 +54,7 @@ class CandidatoIT extends AbstractIntegrationTest {
         mockMvc.perform(json(post("/auth/login"), """
                         {"username": "ana", "senha": "senha123"}"""))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.perfil").value("CANDIDATO"));
+                .andExpect(jsonPath("$.perfis").value(contains("CANDIDATO")));
     }
 
     @Test

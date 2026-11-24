@@ -11,20 +11,22 @@ import com.example.eleicao_service.feature.usuario.model.entity.UsuarioModel;
 
 import java.time.LocalDate;
 import java.time.LocalTime;
+import java.util.HashSet;
+import java.util.Set;
 
 /** Objetos de domínio prontos para os testes unitários. */
 public final class Fixtures {
 
     private Fixtures() {}
 
-    public static UsuarioModel usuario(Long id, Perfil perfil) {
+    public static UsuarioModel usuario(Long id, Perfil... perfis) {
         return UsuarioModel.builder()
                 .id(id)
                 .nome("Usuario " + id)
                 .cpf(String.format("%011d", id))
                 .username("user" + id)
                 .senha("hash")
-                .perfil(perfil)
+                .perfis(new HashSet<>(Set.of(perfis)))
                 .ativo(true)
                 .build();
     }
