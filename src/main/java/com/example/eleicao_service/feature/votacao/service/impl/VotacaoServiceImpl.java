@@ -102,6 +102,9 @@ public class VotacaoServiceImpl implements VotacaoService {
         if (eleicao.getStatus() == StatusEleicao.AGENDADA) {
             throw new RegraNegocioException("A eleição ainda não foi iniciada.");
         }
+        if (eleicao.getStatus() == StatusEleicao.ENCERRADA) {
+            throw new RegraNegocioException("A eleição já foi encerrada. Consulte o resultado final.");
+        }
 
         List<CandidatoModel> candidatos;
 
@@ -112,6 +115,9 @@ public class VotacaoServiceImpl implements VotacaoService {
         if (apenasCandidato) {
             CandidatoModel candidatoLogado = candidatoRepository.findById(usuario.getId())
                     .orElseThrow(() -> new EntidadeNaoEncontradaException("Candidato não encontrado."));
+            if (!candidatoLogado.getEleicao().getId().equals(idEleicao)) {
+                throw new RegraNegocioException("Candidato só pode acompanhar a votação da eleição em que está concorrendo.");
+            }
             candidatos = candidatoRepository.findByEleicaoIdAndCargoId(idEleicao, candidatoLogado.getCargo().getId());
         } else {
             candidatos = candidatoRepository.findByEleicaoId(idEleicao);
@@ -133,10 +139,24 @@ public class VotacaoServiceImpl implements VotacaoService {
         List<ApuracaoCargoResponse> apuracaoPorCargo = agruparApuracaoPorCargo(idEleicao, candidatos);
 
         return apuracaoPorCargo.stream().map(ac -> {
-            ApuracaoCandidatoResponse maisVotado = ac.candidatos().stream()
-                    .max(Comparator.comparingLong(ApuracaoCandidatoResponse::totalVotos))
-                    .orElse(null);
-            return new ResultadoFinalCargoResponse(ac.idCargo(), ac.nomeCargo(), maisVotado, ac.candidatos());
+            long maiorVotacao = ac.candidatos().stream()
+                    .mapToLong(ApuracaoCandidatoResponse::totalVotos)
+                    .max()
+                    .orElse(0L);
+
+            if (maiorVotacao == 0L) {
+                return new ResultadoFinalCargoResponse(ac.idCargo(), ac.nomeCargo(), false, null, List.of(), ac.candidatos());
+            }
+
+            List<ApuracaoCandidatoResponse> lideres = ac.candidatos().stream()
+                    .filter(c -> c.totalVotos() == maiorVotacao)
+                    .toList();
+
+            if (lideres.size() > 1) {
+                return new ResultadoFinalCargoResponse(ac.idCargo(), ac.nomeCargo(), true, null, lideres, ac.candidatos());
+            }
+
+            return new ResultadoFinalCargoResponse(ac.idCargo(), ac.nomeCargo(), false, lideres.get(0), List.of(), ac.candidatos());
         }).toList();
     }
 
@@ -156,7 +176,8 @@ public class VotacaoServiceImpl implements VotacaoService {
                             c.getPartido().getSigla(),
                             votoRepository.countByEleicaoIdAndCandidatoIdUsuario(idEleicao, c.getIdUsuario())
                     ))
-                    .sorted(Comparator.comparingLong(ApuracaoCandidatoResponse::totalVotos).reversed())
+                    .sorted(Comparator.comparingLong(ApuracaoCandidatoResponse::totalVotos).reversed()
+                            .thenComparingInt(ApuracaoCandidatoResponse::numeroEleitoral))
                     .toList();
 
             return new ApuracaoCargoResponse(cargo.getId(), cargo.getNome(), listaCandidatos);

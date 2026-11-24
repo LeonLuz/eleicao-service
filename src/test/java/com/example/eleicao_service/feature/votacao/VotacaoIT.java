@@ -175,9 +175,48 @@ class VotacaoIT extends AbstractIntegrationTest {
     }
 
     @Test
-    void acompanhamentoDeEleicaoAgendadaRetorna409() throws Exception {
-        mockMvc.perform(comToken(get("/api/votacao/eleicao/{id}/acompanhamento", eleicao), login("eleitor1", "senha123")))
+    void acompanhamentoDeEleicaoAgendadaOuEncerradaRetorna409() throws Exception {
+        String eleitor = login("eleitor1", "senha123");
+        mockMvc.perform(comToken(get("/api/votacao/eleicao/{id}/acompanhamento", eleicao), eleitor))
                 .andExpect(status().isConflict());
+
+        abrir();
+        encerrar();
+        mockMvc.perform(comToken(get("/api/votacao/eleicao/{id}/acompanhamento", eleicao), eleitor))
+                .andExpect(status().isConflict());
+    }
+
+    @Test
+    void candidatoNaoAcompanhaEleicaoEmQueNaoConcorre() throws Exception {
+        long outraEleicao = criarEleicao(chefe, "2026-10-25", 2);
+        mockMvc.perform(comToken(patch("/api/eleicoes/{id}/abrir", outraEleicao), chefe))
+                .andExpect(status().isOk());
+
+        mockMvc.perform(comToken(get("/api/votacao/eleicao/{id}/acompanhamento", outraEleicao), login("gov1", "senha123")))
+                .andExpect(status().isConflict());
+    }
+
+    @Test
+    void resultadoFinalTrataEmpateECargoSemVotos() throws Exception {
+        abrir();
+        votar(login("eleitor1", "senha123"), CARGO_GOVERNADOR, gov1).andExpect(status().isCreated());
+        votar(login("eleitor2", "senha123"), CARGO_GOVERNADOR, gov2).andExpect(status().isCreated());
+        encerrar();
+
+        ResultActions resultado = mockMvc.perform(comToken(
+                        get("/api/votacao/eleicao/{id}/resultado-final", eleicao), chefe))
+                .andExpect(status().isOk());
+
+        Map<String, Object> governador = cargo(resultado, "Governador");
+        assertThat(governador.get("empate")).isEqualTo(true);
+        assertThat(governador.get("maisVotado")).isNull();
+        assertThat(lista(governador, "empatados")).extracting(c -> numero(c, "idCandidato"))
+                .containsExactly(gov1, gov2);
+
+        Map<String, Object> senador = cargo(resultado, "Senador");
+        assertThat(senador.get("empate")).isEqualTo(false);
+        assertThat(senador.get("maisVotado")).isNull();
+        assertThat(lista(senador, "empatados")).isEmpty();
     }
 
     @Test
