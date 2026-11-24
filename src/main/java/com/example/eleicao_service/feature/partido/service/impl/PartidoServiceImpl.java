@@ -20,8 +20,10 @@ public class PartidoServiceImpl implements PartidoService {
 
     @Override
     public PartidoResponse cadastrar(PartidoRequest request) {
-        if (partidoRepository.existsByNumero(request.numero()) || partidoRepository.existsBySigla(request.sigla())) {
-            throw new RegraNegocioException("Partido com este número ou sigla já existe.");
+        if (partidoRepository.existsByNumero(request.numero())
+                || partidoRepository.existsBySigla(request.sigla())
+                || partidoRepository.existsByNome(request.nome())) {
+            throw new RegraNegocioException("Partido com este nome, sigla ou número já existe.");
         }
         PartidoModel partido = partidoRepository.save(PartidoModel.builder()
                 .nome(request.nome())

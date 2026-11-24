@@ -3,14 +3,23 @@ package com.example.eleicao_service.feature.eleitor.model.dto;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Pattern;
+import jakarta.validation.constraints.Size;
 import org.hibernate.validator.constraints.br.CPF;
 
 public record EleitorRequest(
-        @NotBlank String nome,
+        @NotBlank
+        @Size(max = 150, message = "Nome deve ter no máximo 150 caracteres")
+        String nome,
+
         @NotBlank
         @CPF(message = "CPF inválido")
         String cpf,
-        @NotBlank String username,
+
+        @NotBlank
+        @Size(max = 150, message = "Username deve ter no máximo 150 caracteres")
+        String username,
+
+        @Pattern(regexp = "^$|.{6,}", message = "A senha deve ter no mínimo 6 caracteres")
         String senha,
 
         @NotBlank(message = "Título de eleitor é obrigatório")
