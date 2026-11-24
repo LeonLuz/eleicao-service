@@ -284,6 +284,30 @@ class VotacaoServiceImplTest {
                     .isInstanceOf(RegraNegocioException.class)
                     .hasMessageContaining("não foi iniciada");
         }
+
+        @Test
+        void naoPermiteAcompanharEleicaoEncerrada() {
+            when(usuarioRepository.findByUsername("eleitor")).thenReturn(Optional.of(usuario(1L, Perfil.ELEITOR)));
+            when(eleicaoRepository.findById(100L)).thenReturn(Optional.of(eleicao(100L, StatusEleicao.ENCERRADA)));
+
+            assertThatThrownBy(() -> service.acompanharVotacao("eleitor", 100L))
+                    .isInstanceOf(RegraNegocioException.class)
+                    .hasMessageContaining("encerrada");
+        }
+
+        @Test
+        void candidatoNaoPodeAcompanharEleicaoEmQueNaoConcorre() {
+            EleicaoModel outraEleicao = eleicao(200L, StatusEleicao.ABERTA);
+            UsuarioModel usuarioCandidato = gov1.getUsuario();
+            when(usuarioRepository.findByUsername(usuarioCandidato.getUsername())).thenReturn(Optional.of(usuarioCandidato));
+            when(eleicaoRepository.findById(200L)).thenReturn(Optional.of(outraEleicao));
+            when(candidatoRepository.findById(50L)).thenReturn(Optional.of(gov1));
+
+            assertThatThrownBy(() -> service.acompanharVotacao(usuarioCandidato.getUsername(), 200L))
+                    .isInstanceOf(RegraNegocioException.class)
+                    .hasMessageContaining("eleição em que está concorrendo");
+            verify(candidatoRepository, never()).findByEleicaoIdAndCargoId(any(), any());
+        }
     }
 
     @Nested
@@ -317,12 +341,51 @@ class VotacaoServiceImplTest {
             assertThat(resultado).hasSize(2);
             ResultadoFinalCargoResponse gov = resultado.stream()
                     .filter(r -> r.idCargo().equals(4L)).findFirst().orElseThrow();
+            assertThat(gov.empate()).isFalse();
+            assertThat(gov.empatados()).isEmpty();
             assertThat(gov.maisVotado().idCandidato()).isEqualTo(50L);
             assertThat(gov.maisVotado().totalVotos()).isEqualTo(12L);
             assertThat(gov.candidatos()).hasSize(2);
             ResultadoFinalCargoResponse sen = resultado.stream()
                     .filter(r -> r.idCargo().equals(3L)).findFirst().orElseThrow();
+            assertThat(sen.empate()).isFalse();
             assertThat(sen.maisVotado().idCandidato()).isEqualTo(52L);
+        }
+
+        @Test
+        void indicaEmpateQuandoDoisCandidatosDividemMaiorVotacao() {
+            EleicaoModel encerrada = eleicao(100L, StatusEleicao.ENCERRADA);
+            CandidatoModel gov1 = candidato(usuario(50L, Perfil.CANDIDATO), 10, partidoA, governador, encerrada);
+            CandidatoModel gov2 = candidato(usuario(51L, Perfil.CANDIDATO), 20, partidoB, governador, encerrada);
+            when(eleicaoRepository.findById(100L)).thenReturn(Optional.of(encerrada));
+            when(candidatoRepository.findByEleicaoId(100L)).thenReturn(List.of(gov1, gov2));
+            when(votoRepository.countByEleicaoIdAndCandidatoIdUsuario(100L, 50L)).thenReturn(5L);
+            when(votoRepository.countByEleicaoIdAndCandidatoIdUsuario(100L, 51L)).thenReturn(5L);
+
+            List<ResultadoFinalCargoResponse> resultado = service.consultarResultadoFinal(100L);
+
+            ResultadoFinalCargoResponse gov = resultado.get(0);
+            assertThat(gov.empate()).isTrue();
+            assertThat(gov.maisVotado()).isNull();
+            assertThat(gov.empatados()).extracting(c -> c.idCandidato()).containsExactly(50L, 51L);
+        }
+
+        @Test
+        void naoApontaMaisVotadoQuandoCargoNaoRecebeuVotos() {
+            EleicaoModel encerrada = eleicao(100L, StatusEleicao.ENCERRADA);
+            CandidatoModel gov1 = candidato(usuario(50L, Perfil.CANDIDATO), 10, partidoA, governador, encerrada);
+            CandidatoModel gov2 = candidato(usuario(51L, Perfil.CANDIDATO), 20, partidoB, governador, encerrada);
+            when(eleicaoRepository.findById(100L)).thenReturn(Optional.of(encerrada));
+            when(candidatoRepository.findByEleicaoId(100L)).thenReturn(List.of(gov1, gov2));
+            when(votoRepository.countByEleicaoIdAndCandidatoIdUsuario(eq(100L), anyLong())).thenReturn(0L);
+
+            List<ResultadoFinalCargoResponse> resultado = service.consultarResultadoFinal(100L);
+
+            ResultadoFinalCargoResponse gov = resultado.get(0);
+            assertThat(gov.empate()).isFalse();
+            assertThat(gov.maisVotado()).isNull();
+            assertThat(gov.empatados()).isEmpty();
+            assertThat(gov.candidatos()).hasSize(2);
         }
 
         @Test

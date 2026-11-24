@@ -5,6 +5,8 @@ import java.util.List;
 public record ResultadoFinalCargoResponse(
         Long idCargo,
         String nomeCargo,
+        boolean empate,
         ApuracaoCandidatoResponse maisVotado,
+        List<ApuracaoCandidatoResponse> empatados,
         List<ApuracaoCandidatoResponse> candidatos
 ) {}

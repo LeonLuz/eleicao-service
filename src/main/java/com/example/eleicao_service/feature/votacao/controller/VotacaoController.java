@@ -34,12 +34,12 @@ public interface VotacaoController {
     @PostMapping("/votar")
     ResponseEntity<VotoConfirmacaoResponse> votar(Authentication authentication, @Valid @RequestBody VotoRequest request);
 
-    @Operation(summary = "Acompanhar evolução da votação", description = "Eleitores veem todos os cargos; Candidatos veem apenas o cargo ao qual concorrem.")
+    @Operation(summary = "Acompanhar evolução da votação", description = "Disponível enquanto a eleição estiver ABERTA. Eleitores veem todos os cargos; Candidatos veem apenas o cargo e eleição aos quais concorrem.")
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "Acompanhamento da votação retornado com sucesso"),
             @ApiResponse(responseCode = "401", description = "Não autenticado", content = @Content),
             @ApiResponse(responseCode = "404", description = "Eleição não encontrada", content = @Content),
-            @ApiResponse(responseCode = "409", description = "Eleição ainda não foi aberta (status AGENDADA)", content = @Content)
+            @ApiResponse(responseCode = "409", description = "Eleição não está aberta (AGENDADA ou ENCERRADA) ou candidato não concorre nesta eleição", content = @Content)
     })
     @GetMapping("/eleicao/{idEleicao}/acompanhamento")
     ResponseEntity<List<ApuracaoCargoResponse>> acompanharVotacao(Authentication authentication, @PathVariable Long idEleicao);
