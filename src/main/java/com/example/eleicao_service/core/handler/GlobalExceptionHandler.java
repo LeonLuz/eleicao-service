@@ -4,6 +4,7 @@ import com.example.eleicao_service.core.handler.exception.AcessoNegadoException;
 import com.example.eleicao_service.core.handler.exception.EntidadeNaoEncontradaException;
 import com.example.eleicao_service.core.handler.exception.NaoAutenticadoException;
 import com.example.eleicao_service.core.handler.exception.RegraNegocioException;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
@@ -46,6 +47,15 @@ public class GlobalExceptionHandler {
     public ResponseEntity<ErrorResponse> handleAccessDenied(Exception ex) {
         return ResponseEntity.status(HttpStatus.FORBIDDEN)
                 .body(new ErrorResponse(403, "Acesso negado", "Você não tem permissão para acessar este recurso.", LocalDateTime.now()));
+    }
+
+    /** Rede de segurança: violação de UNIQUE/FK no banco vira 409 em vez de 500. */
+    @ExceptionHandler(DataIntegrityViolationException.class)
+    public ResponseEntity<ErrorResponse> handleIntegridade(DataIntegrityViolationException ex) {
+        return ResponseEntity.status(HttpStatus.CONFLICT)
+                .body(new ErrorResponse(409, "Conflito de dados",
+                        "A operação viola uma restrição do banco de dados (registro duplicado ou referência inválida).",
+                        LocalDateTime.now()));
     }
 
     @ExceptionHandler(HttpMessageNotReadableException.class)

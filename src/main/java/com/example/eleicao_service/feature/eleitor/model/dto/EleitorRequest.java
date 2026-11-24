@@ -12,8 +12,8 @@ public record EleitorRequest(
         String senha,
 
         @NotBlank(message = "Título de eleitor é obrigatório")
-        @Pattern(regexp = "^\\d{12}$", message = "Título de eleitor deve conter exatamente 10 dígitos numéricos")
-        @Schema(example = "0123456789")
+        @Pattern(regexp = "^\\d{12}$", message = "Título de eleitor deve conter exatamente 12 dígitos numéricos")
+        @Schema(example = "012345678901")
         String tituloEleitor,
 
         @NotBlank(message = "Zona é obrigatória")

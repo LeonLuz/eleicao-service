@@ -39,7 +39,7 @@ public class CandidatoServiceImpl implements CandidatoService {
     public CandidatoResponse cadastrar(CandidatoRequest request) {
         String cpf = request.cpfLimpo();
 
-        if (usuarioRepository.existsByCpf(request.cpf()) || usuarioRepository.existsByUsername(request.username())) {
+        if (usuarioRepository.existsByCpf(cpf) || usuarioRepository.existsByUsername(request.username())) {
             throw new RegraNegocioException("CPF ou Username já cadastrado.");
         }
         if (candidatoRepository.existsByNumeroEleitoralAndCargoIdAndEleicaoId(
@@ -84,8 +84,24 @@ public class CandidatoServiceImpl implements CandidatoService {
                 .orElseThrow(() -> new EntidadeNaoEncontradaException("Candidato não encontrado."));
 
         UsuarioModel usuario = candidato.getUsuario();
+        String cpf = request.cpfLimpo();
+
+        if (!usuario.getCpf().equals(cpf) && usuarioRepository.existsByCpf(cpf)) {
+            throw new RegraNegocioException("CPF já cadastrado.");
+        }
+        if (!usuario.getUsername().equals(request.username()) && usuarioRepository.existsByUsername(request.username())) {
+            throw new RegraNegocioException("Username já cadastrado.");
+        }
+        boolean mudouNumeroCargoOuEleicao = !candidato.getNumeroEleitoral().equals(request.numeroEleitoral())
+                || !candidato.getCargo().getId().equals(request.idCargo())
+                || !candidato.getEleicao().getId().equals(request.idEleicao());
+        if (mudouNumeroCargoOuEleicao && candidatoRepository.existsByNumeroEleitoralAndCargoIdAndEleicaoId(
+                request.numeroEleitoral(), request.idCargo(), request.idEleicao())) {
+            throw new RegraNegocioException("Já existe candidato com este número para este cargo nesta eleição.");
+        }
+
         usuario.setNome(request.nome());
-        usuario.setCpf(request.cpfLimpo());
+        usuario.setCpf(cpf);
         usuario.setUsername(request.username());
         if (request.senha() != null && !request.senha().isBlank()) {
             usuario.setSenha(passwordEncoder.encode(request.senha()));

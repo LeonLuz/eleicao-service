@@ -64,6 +64,18 @@ public class EleitorServiceImpl implements EleitorService {
                 .orElseThrow(() -> new EntidadeNaoEncontradaException("Eleitor não encontrado."));
 
         UsuarioModel usuario = eleitor.getUsuario();
+
+        if (!usuario.getCpf().equals(request.cpf()) && usuarioRepository.existsByCpf(request.cpf())) {
+            throw new RegraNegocioException("CPF já cadastrado.");
+        }
+        if (!usuario.getUsername().equals(request.username()) && usuarioRepository.existsByUsername(request.username())) {
+            throw new RegraNegocioException("Username já cadastrado.");
+        }
+        if (!eleitor.getTituloEleitor().equals(request.tituloEleitor())
+                && eleitorRepository.existsByTituloEleitor(request.tituloEleitor())) {
+            throw new RegraNegocioException("Título de eleitor já cadastrado.");
+        }
+
         usuario.setNome(request.nome());
         usuario.setCpf(request.cpf());
         usuario.setUsername(request.username());
