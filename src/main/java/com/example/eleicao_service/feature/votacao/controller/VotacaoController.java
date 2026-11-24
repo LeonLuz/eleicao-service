@@ -38,7 +38,8 @@ public interface VotacaoController {
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "Acompanhamento da votação retornado com sucesso"),
             @ApiResponse(responseCode = "401", description = "Não autenticado", content = @Content),
-            @ApiResponse(responseCode = "404", description = "Eleição não encontrada", content = @Content)
+            @ApiResponse(responseCode = "404", description = "Eleição não encontrada", content = @Content),
+            @ApiResponse(responseCode = "409", description = "Eleição ainda não foi aberta (status AGENDADA)", content = @Content)
     })
     @GetMapping("/eleicao/{idEleicao}/acompanhamento")
     ResponseEntity<List<ApuracaoCargoResponse>> acompanharVotacao(Authentication authentication, @PathVariable Long idEleicao);

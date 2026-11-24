@@ -13,7 +13,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 
 @Tag(name = "Autenticação", description = "Endpoints para login e geração de token JWT")
-@RequestMapping("/api/auth")
+@RequestMapping("/auth")
 public interface AuthController {
 
     @Operation(summary = "Realizar login", description = "Autentica Chefe da Seção, Eleitor ou Candidato e retorna o JWT.")
