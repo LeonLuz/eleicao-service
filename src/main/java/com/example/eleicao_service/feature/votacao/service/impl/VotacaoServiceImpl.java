@@ -141,7 +141,9 @@ public class VotacaoServiceImpl implements VotacaoService {
         Map<CargoModel, List<CandidatoModel>> porCargo = candidatos.stream()
                 .collect(Collectors.groupingBy(CandidatoModel::getCargo));
 
-        return porCargo.entrySet().stream().map(entry -> {
+        return porCargo.entrySet().stream()
+                .sorted(Map.Entry.<CargoModel, List<CandidatoModel>>comparingByKey(Comparator.comparing(CargoModel::getId)))
+                .map(entry -> {
             CargoModel cargo = entry.getKey();
             List<ApuracaoCandidatoResponse> listaCandidatos = entry.getValue().stream()
                     .map(c -> new ApuracaoCandidatoResponse(
