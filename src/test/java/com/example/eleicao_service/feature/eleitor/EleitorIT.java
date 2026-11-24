@@ -7,6 +7,7 @@ import static org.hamcrest.Matchers.contains;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
@@ -118,5 +119,25 @@ class EleitorIT extends AbstractIntegrationTest {
         mockMvc.perform(comToken(json(post("/api/eleitores"),
                         eleitorJson("y", cpfValido(14), "333333333333", "0001")), eleitor))
                 .andExpect(status().isForbidden());
+    }
+
+    @Test
+    void naoPermiteExcluirEleitorQueJaVotou() throws Exception {
+        String chefe = tokenChefe();
+        long eleicao = criarEleicao(chefe, "2026-10-04", 1);
+        long partido = criarPartido(chefe, "PA", 10);
+        long candidato = criarCandidato(chefe, "gov1", 10, partido, CARGO_GOVERNADOR, eleicao);
+        long idEleitor = criarEleitor(chefe, "maria");
+
+        mockMvc.perform(comToken(patch("/api/eleicoes/{id}/abrir", eleicao), chefe))
+                .andExpect(status().isOk());
+
+        mockMvc.perform(comToken(json(post("/api/votacao/votar"), """
+                        {"idEleicao": %d, "idCargo": %d, "idCandidato": %d}
+                        """.formatted(eleicao, CARGO_GOVERNADOR, candidato)), login("maria", "senha123")))
+                .andExpect(status().isCreated());
+
+        mockMvc.perform(comToken(delete("/api/eleitores/{id}", idEleitor), chefe))
+                .andExpect(status().isConflict());
     }
 }

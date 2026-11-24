@@ -9,6 +9,7 @@ import com.example.eleicao_service.feature.candidato.repository.CandidatoReposit
 import com.example.eleicao_service.feature.candidato.service.CandidatoService;
 import com.example.eleicao_service.feature.cargo.model.CargoModel;
 import com.example.eleicao_service.feature.cargo.repository.CargoRepository;
+import com.example.eleicao_service.feature.eleicao.model.StatusEleicao;
 import com.example.eleicao_service.feature.eleicao.model.entity.EleicaoModel;
 import com.example.eleicao_service.feature.eleicao.repository.EleicaoRepository;
 import com.example.eleicao_service.feature.partido.model.entity.PartidoModel;
@@ -16,6 +17,7 @@ import com.example.eleicao_service.feature.partido.repository.PartidoRepository;
 import com.example.eleicao_service.feature.usuario.model.Perfil;
 import com.example.eleicao_service.feature.usuario.model.entity.UsuarioModel;
 import com.example.eleicao_service.feature.usuario.repository.UsuarioRepository;
+import com.example.eleicao_service.feature.votacao.repository.VotoRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -34,6 +36,7 @@ public class CandidatoServiceImpl implements CandidatoService {
     private final PartidoRepository partidoRepository;
     private final CargoRepository cargoRepository;
     private final EleicaoRepository eleicaoRepository;
+    private final VotoRepository votoRepository;
     private final PasswordEncoder passwordEncoder;
 
     @Override
@@ -52,6 +55,10 @@ public class CandidatoServiceImpl implements CandidatoService {
                 .orElseThrow(() -> new EntidadeNaoEncontradaException("Cargo não encontrado."));
         EleicaoModel eleicao = eleicaoRepository.findById(request.idEleicao())
                 .orElseThrow(() -> new EntidadeNaoEncontradaException("Eleição não encontrada."));
+
+        if (eleicao.getStatus() != StatusEleicao.AGENDADA) {
+            throw new RegraNegocioException("Só é possível cadastrar candidatos em uma eleição AGENDADA.");
+        }
 
         UsuarioModel usuario = usuarioRepository.findByCpf(cpf)
                 .map(existente -> {
@@ -99,6 +106,10 @@ public class CandidatoServiceImpl implements CandidatoService {
         CandidatoModel candidato = candidatoRepository.findById(id)
                 .orElseThrow(() -> new EntidadeNaoEncontradaException("Candidato não encontrado."));
 
+        if (candidato.getEleicao().getStatus() != StatusEleicao.AGENDADA) {
+            throw new RegraNegocioException("Só é possível alterar candidatos enquanto a eleição estiver AGENDADA.");
+        }
+
         UsuarioModel usuario = candidato.getUsuario();
         String cpf = request.cpfLimpo();
 
@@ -116,6 +127,17 @@ public class CandidatoServiceImpl implements CandidatoService {
             throw new RegraNegocioException("Já existe candidato com este número para este cargo nesta eleição.");
         }
 
+        PartidoModel partido = partidoRepository.findById(request.idPartido())
+                .orElseThrow(() -> new EntidadeNaoEncontradaException("Partido não encontrado."));
+        CargoModel cargo = cargoRepository.findById(request.idCargo())
+                .orElseThrow(() -> new EntidadeNaoEncontradaException("Cargo não encontrado."));
+        EleicaoModel eleicao = eleicaoRepository.findById(request.idEleicao())
+                .orElseThrow(() -> new EntidadeNaoEncontradaException("Eleição não encontrada."));
+
+        if (eleicao.getStatus() != StatusEleicao.AGENDADA) {
+            throw new RegraNegocioException("Só é possível associar candidato a uma eleição AGENDADA.");
+        }
+
         usuario.setNome(request.nome());
         usuario.setCpf(cpf);
         usuario.setUsername(request.username());
@@ -124,12 +146,9 @@ public class CandidatoServiceImpl implements CandidatoService {
         }
 
         candidato.setNumeroEleitoral(request.numeroEleitoral());
-        candidato.setPartido(partidoRepository.findById(request.idPartido())
-                .orElseThrow(() -> new EntidadeNaoEncontradaException("Partido não encontrado.")));
-        candidato.setCargo(cargoRepository.findById(request.idCargo())
-                .orElseThrow(() -> new EntidadeNaoEncontradaException("Cargo não encontrado.")));
-        candidato.setEleicao(eleicaoRepository.findById(request.idEleicao())
-                .orElseThrow(() -> new EntidadeNaoEncontradaException("Eleição não encontrada.")));
+        candidato.setPartido(partido);
+        candidato.setCargo(cargo);
+        candidato.setEleicao(eleicao);
 
         return toResponse(candidatoRepository.save(candidato));
     }
@@ -156,6 +175,13 @@ public class CandidatoServiceImpl implements CandidatoService {
     public void excluir(Long id) {
         CandidatoModel candidato = candidatoRepository.findById(id)
                 .orElseThrow(() -> new EntidadeNaoEncontradaException("Candidato não encontrado."));
+
+        if (votoRepository.existsByCandidatoIdUsuario(candidato.getIdUsuario())) {
+            throw new RegraNegocioException("Não é possível excluir um candidato que já recebeu votos.");
+        }
+        if (candidato.getEleicao().getStatus() != StatusEleicao.AGENDADA) {
+            throw new RegraNegocioException("Só é possível excluir candidatos enquanto a eleição estiver AGENDADA.");
+        }
 
         UsuarioModel usuario = candidato.getUsuario();
         usuario.getPerfis().remove(Perfil.CANDIDATO);

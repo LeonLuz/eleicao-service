@@ -16,9 +16,12 @@ import com.example.eleicao_service.feature.partido.repository.PartidoRepository;
 import com.example.eleicao_service.feature.usuario.model.Perfil;
 import com.example.eleicao_service.feature.usuario.model.entity.UsuarioModel;
 import com.example.eleicao_service.feature.usuario.repository.UsuarioRepository;
+import com.example.eleicao_service.feature.votacao.repository.VotoRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.EnumSource;
 import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
@@ -42,6 +45,7 @@ class CandidatoServiceImplTest {
     @Mock private PartidoRepository partidoRepository;
     @Mock private CargoRepository cargoRepository;
     @Mock private EleicaoRepository eleicaoRepository;
+    @Mock private VotoRepository votoRepository;
     @Mock private PasswordEncoder passwordEncoder;
 
     @InjectMocks
@@ -287,6 +291,72 @@ class CandidatoServiceImplTest {
         when(candidatoRepository.findById(50L)).thenReturn(Optional.empty());
 
         assertThatThrownBy(() -> service.excluir(50L)).isInstanceOf(EntidadeNaoEncontradaException.class);
+        verify(candidatoRepository, never()).delete(any());
+    }
+
+    @ParameterizedTest
+    @EnumSource(value = StatusEleicao.class, names = {"ABERTA", "ENCERRADA"})
+    void cadastrar_impedeEmEleicaoNaoAgendada(StatusEleicao status) {
+        when(partidoRepository.findById(1L)).thenReturn(Optional.of(partido));
+        when(cargoRepository.findById(4L)).thenReturn(Optional.of(cargo));
+        when(eleicaoRepository.findById(100L)).thenReturn(Optional.of(eleicao(100L, status)));
+
+        assertThatThrownBy(() -> service.cadastrar(request("segredo")))
+                .isInstanceOf(RegraNegocioException.class)
+                .hasMessageContaining("AGENDADA");
+        verify(candidatoRepository, never()).save(any());
+    }
+
+    @ParameterizedTest
+    @EnumSource(value = StatusEleicao.class, names = {"ABERTA", "ENCERRADA"})
+    void atualizar_impedeQuandoEleicaoDoCandidatoNaoEstaAgendada(StatusEleicao status) {
+        CandidatoModel existente = candidato(usuario(50L, Perfil.CANDIDATO), 10, partido, cargo, eleicao(100L, status));
+        when(candidatoRepository.findById(50L)).thenReturn(Optional.of(existente));
+
+        assertThatThrownBy(() -> service.atualizar(50L, request(null)))
+                .isInstanceOf(RegraNegocioException.class)
+                .hasMessageContaining("AGENDADA");
+        verify(candidatoRepository, never()).save(any());
+    }
+
+    @ParameterizedTest
+    @EnumSource(value = StatusEleicao.class, names = {"ABERTA", "ENCERRADA"})
+    void atualizar_impedeAssociarAEleicaoNaoAgendada(StatusEleicao status) {
+        CandidatoModel existente = candidato(usuario(50L, Perfil.CANDIDATO), 10, partido, cargo, eleicao);
+        when(candidatoRepository.findById(50L)).thenReturn(Optional.of(existente));
+        when(partidoRepository.findById(1L)).thenReturn(Optional.of(partido));
+        when(cargoRepository.findById(4L)).thenReturn(Optional.of(cargo));
+        when(eleicaoRepository.findById(200L)).thenReturn(Optional.of(eleicao(200L, status)));
+
+        CandidatoRequest outraEleicao = new CandidatoRequest("Maria", "529.982.247-25", "maria", null, 10, 1L, 4L, 200L);
+        assertThatThrownBy(() -> service.atualizar(50L, outraEleicao))
+                .isInstanceOf(RegraNegocioException.class)
+                .hasMessageContaining("AGENDADA");
+        verify(candidatoRepository, never()).save(any());
+    }
+
+    @Test
+    void excluir_impedeQuandoCandidatoJaRecebeuVotos() {
+        CandidatoModel c = candidato(usuario(50L, Perfil.CANDIDATO), 10, partido, cargo, eleicao(100L, StatusEleicao.ABERTA));
+        when(candidatoRepository.findById(50L)).thenReturn(Optional.of(c));
+        when(votoRepository.existsByCandidatoIdUsuario(50L)).thenReturn(true);
+
+        assertThatThrownBy(() -> service.excluir(50L))
+                .isInstanceOf(RegraNegocioException.class)
+                .hasMessageContaining("votos");
+        verify(candidatoRepository, never()).delete(any());
+    }
+
+    @ParameterizedTest
+    @EnumSource(value = StatusEleicao.class, names = {"ABERTA", "ENCERRADA"})
+    void excluir_impedeQuandoEleicaoNaoEstaAgendada(StatusEleicao status) {
+        CandidatoModel c = candidato(usuario(50L, Perfil.CANDIDATO), 10, partido, cargo, eleicao(100L, status));
+        when(candidatoRepository.findById(50L)).thenReturn(Optional.of(c));
+        when(votoRepository.existsByCandidatoIdUsuario(50L)).thenReturn(false);
+
+        assertThatThrownBy(() -> service.excluir(50L))
+                .isInstanceOf(RegraNegocioException.class)
+                .hasMessageContaining("AGENDADA");
         verify(candidatoRepository, never()).delete(any());
     }
 }

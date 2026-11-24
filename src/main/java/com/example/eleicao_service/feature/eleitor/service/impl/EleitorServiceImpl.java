@@ -10,6 +10,7 @@ import com.example.eleicao_service.feature.eleitor.service.EleitorService;
 import com.example.eleicao_service.feature.usuario.model.Perfil;
 import com.example.eleicao_service.feature.usuario.model.entity.UsuarioModel;
 import com.example.eleicao_service.feature.usuario.repository.UsuarioRepository;
+import com.example.eleicao_service.feature.votacao.repository.ControleVotoRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -25,6 +26,7 @@ public class EleitorServiceImpl implements EleitorService {
 
     private final EleitorRepository eleitorRepository;
     private final UsuarioRepository usuarioRepository;
+    private final ControleVotoRepository controleVotoRepository;
     private final PasswordEncoder passwordEncoder;
 
     @Override
@@ -122,6 +124,10 @@ public class EleitorServiceImpl implements EleitorService {
     public void excluir(Long id) {
         EleitorModel eleitor = eleitorRepository.findById(id)
                 .orElseThrow(() -> new EntidadeNaoEncontradaException("Eleitor não encontrado."));
+
+        if (controleVotoRepository.existsByEleitorIdUsuario(eleitor.getIdUsuario())) {
+            throw new RegraNegocioException("Não é possível excluir um eleitor que já registrou voto.");
+        }
 
         UsuarioModel usuario = eleitor.getUsuario();
         usuario.getPerfis().remove(Perfil.ELEITOR);

@@ -36,7 +36,8 @@ public interface CandidatoController {
             @ApiResponse(responseCode = "400", description = "Dados inválidos na requisição", content = @Content),
             @ApiResponse(responseCode = "401", description = "Não autenticado", content = @Content),
             @ApiResponse(responseCode = "403", description = "Acesso negado (requer perfil CHEFE_SECAO)", content = @Content),
-            @ApiResponse(responseCode = "404", description = "Candidato não encontrado", content = @Content)
+            @ApiResponse(responseCode = "404", description = "Candidato não encontrado", content = @Content),
+            @ApiResponse(responseCode = "409", description = "Regra de negócio violada (ex: eleição não está AGENDADA ou dados duplicados)", content = @Content)
     })
     @PreAuthorize("hasRole('CHEFE_SECAO')")
     @PutMapping("/{id}")
@@ -73,7 +74,8 @@ public interface CandidatoController {
             @ApiResponse(responseCode = "204", description = "Candidato excluído com sucesso", content = @Content),
             @ApiResponse(responseCode = "401", description = "Não autenticado", content = @Content),
             @ApiResponse(responseCode = "403", description = "Acesso negado (requer perfil CHEFE_SECAO)", content = @Content),
-            @ApiResponse(responseCode = "404", description = "Candidato não encontrado", content = @Content)
+            @ApiResponse(responseCode = "404", description = "Candidato não encontrado", content = @Content),
+            @ApiResponse(responseCode = "409", description = "Candidato não pode ser excluído (eleição não está AGENDADA ou já recebeu votos)", content = @Content)
     })
     @PreAuthorize("hasRole('CHEFE_SECAO')")
     @DeleteMapping("/{id}")
