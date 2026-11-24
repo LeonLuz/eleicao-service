@@ -5,7 +5,9 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.containsInAnyOrder;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
@@ -113,5 +115,41 @@ class MultiplosPerfisIT extends AbstractIntegrationTest {
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.id").value(eleitor))
                 .andExpect(jsonPath("$.perfis").value(containsInAnyOrder("ELEITOR", "CHEFE_SECAO")));
+    }
+
+    @Test
+    void excluirEleitorQueTambemEhCandidatoMantemOCandidato() throws Exception {
+        long id = criarEleitor(chefe, "maria");
+        mockMvc.perform(comToken(json(post("/api/candidatos"),
+                        candidatoJson("maria", cpfDoUsuario(id), 10, partido, CARGO_GOVERNADOR, eleicao)), chefe))
+                .andExpect(status().isCreated());
+
+        mockMvc.perform(comToken(delete("/api/eleitores/{id}", id), chefe))
+                .andExpect(status().isNoContent());
+
+        mockMvc.perform(comToken(get("/api/candidatos/{id}", id), chefe))
+                .andExpect(status().isOk());
+        mockMvc.perform(json(post("/auth/login"), """
+                        {"username": "maria", "senha": "senha123"}"""))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.perfis").value(contains("CANDIDATO")));
+    }
+
+    @Test
+    void excluirCandidatoQueTambemEhEleitorMantemOEleitor() throws Exception {
+        long id = criarEleitor(chefe, "maria");
+        mockMvc.perform(comToken(json(post("/api/candidatos"),
+                        candidatoJson("maria", cpfDoUsuario(id), 10, partido, CARGO_GOVERNADOR, eleicao)), chefe))
+                .andExpect(status().isCreated());
+
+        mockMvc.perform(comToken(delete("/api/candidatos/{id}", id), chefe))
+                .andExpect(status().isNoContent());
+
+        mockMvc.perform(comToken(get("/api/eleitores/{id}", id), chefe))
+                .andExpect(status().isOk());
+        mockMvc.perform(json(post("/auth/login"), """
+                        {"username": "maria", "senha": "senha123"}"""))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.perfis").value(contains("ELEITOR")));
     }
 }

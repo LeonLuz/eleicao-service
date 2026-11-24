@@ -17,7 +17,7 @@ public class EleitorModel{
     @Column(name = "id_usuario")
     private Long idUsuario;
 
-    @OneToOne(cascade = CascadeType.ALL)
+    @OneToOne(cascade = {CascadeType.PERSIST, CascadeType.MERGE})
     @MapsId
     @JoinColumn(name = "id_usuario")
     private UsuarioModel usuario;
