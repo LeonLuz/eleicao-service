@@ -3,6 +3,7 @@ package com.example.eleicao_service.feature.eleitor;
 import com.example.eleicao_service.support.AbstractIntegrationTest;
 import org.junit.jupiter.api.Test;
 
+import static org.hamcrest.Matchers.contains;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
@@ -52,7 +53,7 @@ class EleitorIT extends AbstractIntegrationTest {
         mockMvc.perform(json(post("/auth/login"), """
                         {"username": "maria", "senha": "senha123"}"""))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.perfil").value("ELEITOR"));
+                .andExpect(jsonPath("$.perfis").value(contains("ELEITOR")));
 
         String senhaNoBanco = jdbc.queryForObject("SELECT senha FROM usuario WHERE username = 'maria'", String.class);
         assertThat(senhaNoBanco).isNotEqualTo("senha123").startsWith("$2"); // BCrypt

@@ -10,7 +10,7 @@ class EleicaoServiceApplicationIT extends AbstractIntegrationTest {
     @Test
     void contextoSobeECriaOChefeDeSecaoInicial() {
         Integer admins = jdbc.queryForObject(
-                "SELECT COUNT(*) FROM usuario WHERE username = ? AND perfil = 'CHEFE_SECAO'",
+                "SELECT COUNT(*) FROM usuario WHERE username = ? AND JSON_CONTAINS(perfis, '\"CHEFE_SECAO\"')",
                 Integer.class, ADMIN_USERNAME);
         assertThat(admins).isEqualTo(1);
     }

@@ -3,6 +3,7 @@ package com.example.eleicao_service.feature.auth;
 import com.example.eleicao_service.support.AbstractIntegrationTest;
 import org.junit.jupiter.api.Test;
 
+import static org.hamcrest.Matchers.contains;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
@@ -18,7 +19,7 @@ class AuthIT extends AbstractIntegrationTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.token").isNotEmpty())
                 .andExpect(jsonPath("$.tipo").value("Bearer"))
-                .andExpect(jsonPath("$.perfil").value("CHEFE_SECAO"));
+                .andExpect(jsonPath("$.perfis").value(contains("CHEFE_SECAO")));
     }
 
     @Test
@@ -51,7 +52,7 @@ class AuthIT extends AbstractIntegrationTest {
         mockMvc.perform(comToken(get("/api/usuarios/me"), tokenChefe()))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.username").value(ADMIN_USERNAME))
-                .andExpect(jsonPath("$.perfil").value("CHEFE_SECAO"));
+                .andExpect(jsonPath("$.perfis").value(contains("CHEFE_SECAO")));
     }
 
     @Test
@@ -81,7 +82,7 @@ class AuthIT extends AbstractIntegrationTest {
 
         mockMvc.perform(comToken(json(post("/api/usuarios/chefe-secao"), novoChefe), tokenChefe()))
                 .andExpect(status().isCreated())
-                .andExpect(jsonPath("$.perfil").value("CHEFE_SECAO"));
+                .andExpect(jsonPath("$.perfis").value(contains("CHEFE_SECAO")));
         login("chefe2", "segredo");
     }
 }
