@@ -27,7 +27,7 @@ public class UsuarioServiceImpl implements UsuarioService {
     @Override
     @Transactional
     public UsuarioResponse criarChefeSecao(CriarChefeSecaoRequest request) {
-        UsuarioModel usuario = usuarioRepository.findByCpf(request.cpf())
+        UsuarioModel usuario = usuarioRepository.findByCpf(request.cpfLimpo())
                 .map(existente -> {
                     if (existente.possuiPerfil(Perfil.CANDIDATO)) {
                         throw new RegraNegocioException("Um candidato não pode ser cadastrado como chefe de seção.");
@@ -44,7 +44,7 @@ public class UsuarioServiceImpl implements UsuarioService {
                     }
                     UsuarioModel novoChefe = UsuarioModel.builder()
                             .nome(request.nome())
-                            .cpf(request.cpf())
+                            .cpf(request.cpfLimpo())
                             .username(request.username())
                             .senha(passwordEncoder.encode(request.senha()))
                             .perfis(new HashSet<>(Set.of(Perfil.CHEFE_SECAO)))

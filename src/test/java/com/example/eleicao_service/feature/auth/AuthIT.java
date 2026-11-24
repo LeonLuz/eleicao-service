@@ -99,4 +99,12 @@ class AuthIT extends AbstractIntegrationTest {
                 .andExpect(status().isUnauthorized());
         login("maria2", "senha123");
     }
+
+    @Test
+    void cadastroDeChefeComCpfInvalidoRetorna400() throws Exception {
+        mockMvc.perform(comToken(json(post("/api/usuarios/chefe-secao"), """
+                        {"nome": "Chefe", "cpf": "12345678900", "username": "chefe2", "senha": "segredo"}"""),
+                        tokenChefe()))
+                .andExpect(status().isBadRequest());
+    }
 }

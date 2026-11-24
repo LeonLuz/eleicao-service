@@ -49,6 +49,18 @@ class UsuarioServiceImplTest {
     }
 
     @Test
+    void criarChefeSecao_guardaOCpfSemPontuacao() {
+        when(passwordEncoder.encode("segredo")).thenReturn("HASH");
+        when(usuarioRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
+
+        UsuarioResponse resposta = service.criarChefeSecao(
+                new CriarChefeSecaoRequest("Ana", "529.982.247-25", "ana", "segredo"));
+
+        verify(usuarioRepository).findByCpf("52998224725");
+        assertThat(resposta.cpf()).isEqualTo("52998224725");
+    }
+
+    @Test
     void criarChefeSecao_impedeUsernameDuplicado() {
         when(usuarioRepository.existsByUsername("ana")).thenReturn(true);
 
