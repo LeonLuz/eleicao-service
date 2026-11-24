@@ -7,6 +7,7 @@ import org.springframework.test.web.servlet.ResultActions;
 
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.hamcrest.Matchers.containsInAnyOrder;
@@ -120,6 +121,28 @@ class VotacaoIT extends AbstractIntegrationTest {
         assertThat(colunasVoto).map(String::toLowerCase)
                 .contains("id_candidato")
                 .noneMatch(c -> c.contains("eleitor") || c.contains("usuario"));
+    }
+
+    @Test
+    void sigiloDoVotoNaoHaComoCruzarControleEVoto() throws Exception {
+        abrir();
+        votar(login("eleitor1", "senha123"), CARGO_GOVERNADOR, gov1).andExpect(status().isCreated());
+        votar(login("eleitor2", "senha123"), CARGO_GOVERNADOR, gov2).andExpect(status().isCreated());
+
+        assertThat(jdbc.queryForList(
+                "SELECT column_name FROM information_schema.columns WHERE table_schema = DATABASE() "
+                        + "AND table_name = 'voto'", String.class))
+                .map(String::toLowerCase)
+                .containsExactlyInAnyOrder("id", "id_eleicao", "id_cargo", "id_candidato");
+
+        assertThat(jdbc.queryForList("SELECT id FROM voto", String.class))
+                .hasSize(2)
+                .allSatisfy(id -> assertThat(UUID.fromString(id).version()).isEqualTo(4));
+
+        Integer combinacoes = jdbc.queryForObject("""
+                SELECT COUNT(*) FROM controle_voto c
+                JOIN voto v ON v.id_eleicao = c.id_eleicao AND v.id_cargo = c.id_cargo""", Integer.class);
+        assertThat(combinacoes).isEqualTo(4);
     }
 
     @Test

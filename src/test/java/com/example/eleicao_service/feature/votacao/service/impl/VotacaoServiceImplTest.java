@@ -33,8 +33,10 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import java.time.temporal.Temporal;
 import java.util.List;
 import java.util.Optional;
+import java.util.UUID;
 
 import static com.example.eleicao_service.support.Fixtures.*;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -114,6 +116,13 @@ class VotacaoServiceImplTest {
             // Sigilo: o voto não guarda nenhuma referência ao eleitor
             assertThat(VotoModel.class.getDeclaredFields())
                     .noneMatch(f -> EleitorModel.class.equals(f.getType()) || UsuarioModel.class.equals(f.getType()));
+        }
+
+        @Test
+        void votoNaoGuardaHorarioNemIdSequencial() throws Exception {
+            assertThat(VotoModel.class.getDeclaredFields())
+                    .noneMatch(f -> Temporal.class.isAssignableFrom(f.getType()));
+            assertThat(VotoModel.class.getDeclaredField("id").getType()).isEqualTo(UUID.class);
         }
 
         @Test
