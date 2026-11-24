@@ -72,6 +72,7 @@ class CandidatoServiceImplTest {
     void cadastrar_criaUsuarioComPerfilCandidatoESenhaCriptografada() {
         referenciasExistem();
         when(passwordEncoder.encode("segredo")).thenReturn("HASH");
+        when(usuarioRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
         when(candidatoRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
 
         CandidatoResponse resposta = service.cadastrar(request("segredo"));
@@ -79,7 +80,7 @@ class CandidatoServiceImplTest {
         ArgumentCaptor<CandidatoModel> captor = ArgumentCaptor.forClass(CandidatoModel.class);
         verify(candidatoRepository).save(captor.capture());
         CandidatoModel salvo = captor.getValue();
-        assertThat(salvo.getUsuario().getPerfil()).isEqualTo(Perfil.CANDIDATO);
+        assertThat(salvo.getUsuario().getPerfis()).containsExactly(Perfil.CANDIDATO);
         assertThat(salvo.getUsuario().getSenha()).isEqualTo("HASH");
         assertThat(salvo.getUsuario().getCpf()).isEqualTo("52998224725");
         assertThat(salvo.getUsuario().getAtivo()).isTrue();
@@ -92,7 +93,8 @@ class CandidatoServiceImplTest {
     }
 
     @Test
-    void cadastrar_impedeCpfOuUsernameDuplicado() {
+    void cadastrar_impedeUsernameDuplicado() {
+        referenciasExistem();
         when(usuarioRepository.existsByUsername("maria")).thenReturn(true);
 
         assertThatThrownBy(() -> service.cadastrar(request("segredo")))
@@ -112,6 +114,7 @@ class CandidatoServiceImplTest {
 
     @Test
     void cadastrar_exigeSenha() {
+        referenciasExistem();
         assertThatThrownBy(() -> service.cadastrar(request("  ")))
                 .isInstanceOf(RegraNegocioException.class)
                 .hasMessageContaining("Senha");
@@ -154,13 +157,42 @@ class CandidatoServiceImplTest {
     }
 
     @Test
-    void cadastrar_detectaCpfDuplicadoMesmoQuandoEnviadoComPontuacao() {
-        // o request traz "529.982.247-25"; o banco guarda só os dígitos
-        when(usuarioRepository.existsByCpf("52998224725")).thenReturn(true);
+    void cadastrar_detectaCandidatoJaCadastradoMesmoComCpfComPontuacao() {
+        referenciasExistem();
+        when(usuarioRepository.findByCpf("52998224725")).thenReturn(Optional.of(usuario(50L, Perfil.CANDIDATO)));
 
         assertThatThrownBy(() -> service.cadastrar(request("segredo")))
-                .isInstanceOf(RegraNegocioException.class);
+                .isInstanceOf(RegraNegocioException.class)
+                .hasMessageContaining("já está cadastrado como candidato");
         verify(candidatoRepository, never()).save(any());
+    }
+
+    @Test
+    void cadastrar_impedeChefeDeSecaoComoCandidato() {
+        referenciasExistem();
+        when(usuarioRepository.findByCpf("52998224725")).thenReturn(Optional.of(usuario(7L, Perfil.CHEFE_SECAO)));
+
+        assertThatThrownBy(() -> service.cadastrar(request("segredo")))
+                .isInstanceOf(RegraNegocioException.class)
+                .hasMessageContaining("chefe de seção");
+        verify(candidatoRepository, never()).save(any());
+    }
+
+    @Test
+    void cadastrar_adicionaPerfilCandidatoAoEleitorJaCadastrado() {
+        referenciasExistem();
+        UsuarioModel eleitor = usuario(1L, Perfil.ELEITOR);
+        when(usuarioRepository.findByCpf("52998224725")).thenReturn(Optional.of(eleitor));
+        when(usuarioRepository.save(eleitor)).thenReturn(eleitor);
+        when(candidatoRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
+
+        service.cadastrar(request(null));
+
+        ArgumentCaptor<CandidatoModel> captor = ArgumentCaptor.forClass(CandidatoModel.class);
+        verify(candidatoRepository).save(captor.capture());
+        assertThat(captor.getValue().getUsuario()).isSameAs(eleitor);
+        assertThat(eleitor.getPerfis()).containsExactlyInAnyOrder(Perfil.ELEITOR, Perfil.CANDIDATO);
+        verifyNoInteractions(passwordEncoder);
     }
 
     @Test
@@ -233,6 +265,21 @@ class CandidatoServiceImplTest {
         service.excluir(50L);
 
         verify(candidatoRepository).delete(c);
+        verify(usuarioRepository).delete(c.getUsuario());
+    }
+
+    @Test
+    void excluir_mantemUsuarioQueTambemEhEleitor() {
+        UsuarioModel usuario = usuario(50L, Perfil.CANDIDATO, Perfil.ELEITOR);
+        CandidatoModel c = candidato(usuario, 10, partido, cargo, eleicao);
+        when(candidatoRepository.findById(50L)).thenReturn(Optional.of(c));
+
+        service.excluir(50L);
+
+        verify(candidatoRepository).delete(c);
+        verify(usuarioRepository).save(usuario);
+        verify(usuarioRepository, never()).delete(any());
+        assertThat(usuario.getPerfis()).containsExactly(Perfil.ELEITOR);
     }
 
     @Test

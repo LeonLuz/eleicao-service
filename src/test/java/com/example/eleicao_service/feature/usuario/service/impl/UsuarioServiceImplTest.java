@@ -43,7 +43,7 @@ class UsuarioServiceImplTest {
 
         UsuarioResponse resposta = service.criarChefeSecao(novoChefe);
 
-        assertThat(resposta.perfil()).isEqualTo(Perfil.CHEFE_SECAO);
+        assertThat(resposta.perfis()).containsExactly(Perfil.CHEFE_SECAO);
         assertThat(resposta.ativo()).isTrue();
         verify(usuarioRepository).save(argThat(u -> "HASH".equals(u.getSenha())));
     }
@@ -59,12 +59,36 @@ class UsuarioServiceImplTest {
     }
 
     @Test
-    void criarChefeSecao_impedeCpfDuplicado() {
-        when(usuarioRepository.existsByCpf("52998224725")).thenReturn(true);
+    void criarChefeSecao_impedeUsuarioQueJaEhChefe() {
+        when(usuarioRepository.findByCpf("52998224725")).thenReturn(Optional.of(usuario(7L, Perfil.CHEFE_SECAO)));
 
         assertThatThrownBy(() -> service.criarChefeSecao(novoChefe))
                 .isInstanceOf(RegraNegocioException.class)
-                .hasMessageContaining("CPF");
+                .hasMessageContaining("já possui o perfil");
+        verify(usuarioRepository, never()).save(any());
+    }
+
+    @Test
+    void criarChefeSecao_impedeCandidato() {
+        when(usuarioRepository.findByCpf("52998224725")).thenReturn(Optional.of(usuario(7L, Perfil.CANDIDATO)));
+
+        assertThatThrownBy(() -> service.criarChefeSecao(novoChefe))
+                .isInstanceOf(RegraNegocioException.class)
+                .hasMessageContaining("candidato");
+        verify(usuarioRepository, never()).save(any());
+    }
+
+    @Test
+    void criarChefeSecao_adicionaPerfilAoEleitorJaCadastrado() {
+        UsuarioModel eleitor = usuario(7L, Perfil.ELEITOR);
+        when(usuarioRepository.findByCpf("52998224725")).thenReturn(Optional.of(eleitor));
+        when(usuarioRepository.save(eleitor)).thenReturn(eleitor);
+
+        UsuarioResponse resposta = service.criarChefeSecao(novoChefe);
+
+        assertThat(resposta.id()).isEqualTo(7L);
+        assertThat(resposta.perfis()).containsExactlyInAnyOrder(Perfil.ELEITOR, Perfil.CHEFE_SECAO);
+        verifyNoInteractions(passwordEncoder);
     }
 
     @Test

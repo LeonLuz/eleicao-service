@@ -7,6 +7,7 @@ import com.example.eleicao_service.feature.eleitor.model.dto.EleitorResponse;
 import com.example.eleicao_service.feature.eleitor.model.entity.EleitorModel;
 import com.example.eleicao_service.feature.eleitor.repository.EleitorRepository;
 import com.example.eleicao_service.feature.usuario.model.Perfil;
+import com.example.eleicao_service.feature.usuario.model.entity.UsuarioModel;
 import com.example.eleicao_service.feature.usuario.repository.UsuarioRepository;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -42,24 +43,53 @@ class EleitorServiceImplTest {
     @Test
     void cadastrar_criaUsuarioComPerfilEleitorESenhaCriptografada() {
         when(passwordEncoder.encode("segredo")).thenReturn("HASH");
+        when(usuarioRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
         when(eleitorRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
 
         EleitorResponse resposta = service.cadastrar(request("segredo"));
 
         ArgumentCaptor<EleitorModel> captor = ArgumentCaptor.forClass(EleitorModel.class);
         verify(eleitorRepository).save(captor.capture());
-        assertThat(captor.getValue().getUsuario().getPerfil()).isEqualTo(Perfil.ELEITOR);
+        assertThat(captor.getValue().getUsuario().getPerfis()).containsExactly(Perfil.ELEITOR);
         assertThat(captor.getValue().getUsuario().getSenha()).isEqualTo("HASH");
         assertThat(resposta.tituloEleitor()).isEqualTo("123456789012");
         assertThat(resposta.username()).isEqualTo("joao");
     }
 
     @Test
-    void cadastrar_impedeCpfDuplicado() {
-        when(usuarioRepository.existsByCpf("52998224725")).thenReturn(true);
+    void cadastrar_impedeUsuarioQueJaEhEleitor() {
+        when(usuarioRepository.findByCpf("52998224725")).thenReturn(Optional.of(usuario(1L, Perfil.ELEITOR)));
 
-        assertThatThrownBy(() -> service.cadastrar(request("segredo"))).isInstanceOf(RegraNegocioException.class);
+        assertThatThrownBy(() -> service.cadastrar(request("segredo")))
+                .isInstanceOf(RegraNegocioException.class)
+                .hasMessageContaining("já está cadastrado como eleitor");
         verify(eleitorRepository, never()).save(any());
+    }
+
+    @Test
+    void cadastrar_impedeUsernameDuplicado() {
+        when(usuarioRepository.existsByUsername("joao")).thenReturn(true);
+
+        assertThatThrownBy(() -> service.cadastrar(request("segredo")))
+                .isInstanceOf(RegraNegocioException.class)
+                .hasMessageContaining("Username");
+        verify(eleitorRepository, never()).save(any());
+    }
+
+    @Test
+    void cadastrar_adicionaPerfilEleitorAoCandidatoJaCadastrado() {
+        UsuarioModel candidato = usuario(50L, Perfil.CANDIDATO);
+        when(usuarioRepository.findByCpf("52998224725")).thenReturn(Optional.of(candidato));
+        when(usuarioRepository.save(candidato)).thenReturn(candidato);
+        when(eleitorRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
+
+        service.cadastrar(request(null));
+
+        ArgumentCaptor<EleitorModel> captor = ArgumentCaptor.forClass(EleitorModel.class);
+        verify(eleitorRepository).save(captor.capture());
+        assertThat(captor.getValue().getUsuario()).isSameAs(candidato);
+        assertThat(candidato.getPerfis()).containsExactlyInAnyOrder(Perfil.CANDIDATO, Perfil.ELEITOR);
+        verifyNoInteractions(passwordEncoder);
     }
 
     @Test
@@ -144,5 +174,20 @@ class EleitorServiceImplTest {
         service.excluir(1L);
 
         verify(eleitorRepository).delete(existente);
+        verify(usuarioRepository).delete(existente.getUsuario());
+    }
+
+    @Test
+    void excluir_mantemUsuarioQueTambemEhCandidato() {
+        UsuarioModel usuario = usuario(1L, Perfil.ELEITOR, Perfil.CANDIDATO);
+        EleitorModel existente = eleitor(usuario);
+        when(eleitorRepository.findById(1L)).thenReturn(Optional.of(existente));
+
+        service.excluir(1L);
+
+        verify(eleitorRepository).delete(existente);
+        verify(usuarioRepository).save(usuario);
+        verify(usuarioRepository, never()).delete(any());
+        assertThat(usuario.getPerfis()).containsExactly(Perfil.CANDIDATO);
     }
 }

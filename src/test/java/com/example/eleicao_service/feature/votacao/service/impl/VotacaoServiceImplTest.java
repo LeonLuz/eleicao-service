@@ -116,6 +116,19 @@ class VotacaoServiceImplTest {
                     .noneMatch(f -> EleitorModel.class.equals(f.getType()) || UsuarioModel.class.equals(f.getType()));
         }
 
+        @Test
+        void eleitorQueTambemEhCandidatoPodeVotar() {
+            usuarioEleitor.adicionarPerfil(Perfil.CANDIDATO);
+            eleitorEEleicaoExistem(eleicaoAberta);
+            when(controleVotoRepository.existsByEleicaoIdAndEleitorIdUsuarioAndCargoId(100L, 1L, 4L)).thenReturn(false);
+            when(candidatoRepository.findById(50L)).thenReturn(Optional.of(candidato));
+
+            service.registrarVoto("user1", new VotoRequest(100L, 4L, 50L));
+
+            verify(controleVotoRepository).save(any());
+            verify(votoRepository).save(any());
+        }
+
         @ParameterizedTest
         @EnumSource(value = Perfil.class, names = {"CANDIDATO", "CHEFE_SECAO"})
         void deveImpedirVotoDeQuemNaoEhEleitor(Perfil perfil) {
@@ -235,6 +248,22 @@ class VotacaoServiceImplTest {
             assertThat(apuracao).singleElement()
                     .extracting(ApuracaoCargoResponse::nomeCargo).isEqualTo("Governador");
             verify(candidatoRepository, never()).findByEleicaoId(any());
+        }
+
+        @Test
+        void candidatoQueTambemEhEleitorVeTodosOsCargos() {
+            UsuarioModel usuarioCandidato = gov1.getUsuario();
+            usuarioCandidato.adicionarPerfil(Perfil.ELEITOR);
+            when(usuarioRepository.findByUsername(usuarioCandidato.getUsername())).thenReturn(Optional.of(usuarioCandidato));
+            when(eleicaoRepository.findById(100L)).thenReturn(Optional.of(eleicao));
+            when(candidatoRepository.findByEleicaoId(100L)).thenReturn(List.of(gov1, gov2, sen1));
+            when(votoRepository.countByEleicaoIdAndCandidatoIdUsuario(eq(100L), anyLong())).thenReturn(0L);
+
+            List<ApuracaoCargoResponse> apuracao = service.acompanharVotacao(usuarioCandidato.getUsername(), 100L);
+
+            assertThat(apuracao).extracting(ApuracaoCargoResponse::nomeCargo)
+                    .containsExactlyInAnyOrder("Governador", "Senador");
+            verify(candidatoRepository, never()).findByEleicaoIdAndCargoId(any(), any());
         }
 
         @Test
